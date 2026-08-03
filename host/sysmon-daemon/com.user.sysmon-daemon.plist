@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd user agent template for the sysmon daemon.
+
+  Before installing, replace YOURUSER with your macOS user name (launchd
+  does NOT expand ~ or environment variables in these paths) and adjust
+  the venv path if yours differs. See README.md for install steps.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.sysmon-daemon</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/YOURUSER/.venvs/sysmon/bin/python</string>
+        <string>-u</string>
+        <string>-m</string>
+        <string>sysmon_daemon</string>
+    </array>
+
+    <!-- -u above: stderr goes to a file here, so Python would block-buffer it
+         and the log would stay empty for hours. -->
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/YOURUSER/Library/Logs/sysmon-daemon.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/YOURUSER/Library/Logs/sysmon-daemon.log</string>
+</dict>
+</plist>

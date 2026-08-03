@@ -1,0 +1,21 @@
+# west workspace, if someone ignores the README and inits one here anyway
+.west/
+zmk/
+zephyr/*
+!zephyr/module.yml
+modules/
+tools/zephyr/
+bootloader/
+optional/
+
+# build output
+build/
+
+# python (host/sysmon-daemon)
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.venv/
+
+.DS_Store

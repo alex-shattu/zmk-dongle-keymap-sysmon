@@ -1,0 +1,8 @@
+file_format: "1"
+id: dongle_tft
+name: Dongle TFT (ST7789V 240x240)
+type: shield
+url: https://github.com/felixJR123/Snake-Dongle-Case
+requires: [pro_micro]
+features:
+  - display

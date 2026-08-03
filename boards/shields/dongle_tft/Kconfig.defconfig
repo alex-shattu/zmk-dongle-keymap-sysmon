@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: MIT
+
+if SHIELD_DONGLE_TFT
+
+choice ZMK_DISPLAY_STATUS_SCREEN
+	default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+endchoice
+
+config ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+	select LV_USE_LABEL
+	select LV_USE_BAR
+	select LV_USE_CHART
+	select LV_FONT_MONTSERRAT_8
+	select LV_FONT_MONTSERRAT_10
+	select LV_FONT_MONTSERRAT_12
+	# Not used by the UI, but it is the LVGL default font and has to exist.
+	select LV_FONT_MONTSERRAT_14
+	imply ZMK_HID_INDICATORS
+
+# The UI is redrawn from ZMK events and from a 250 ms sysmon timer; keep that
+# off the system work queue.
+choice ZMK_DISPLAY_WORK_QUEUE
+	default ZMK_DISPLAY_WORK_QUEUE_DEDICATED
+endchoice
+
+config ZMK_DISPLAY_DEDICATED_THREAD_STACK_SIZE
+	default 4096
+
+# 16 bpp colour, unlike the 1 bpp OLED variant.
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+# Percentage of the 240x240 frame kept in RAM. 16 % is ~18 kB, which is what
+# a BLE central can spare; partial rendering just flushes more often.
+config LV_Z_VDB_SIZE
+	default 16
+
+# ~70 widgets, the largest being the 36 keymap keys and the CPU chart.
+config LV_Z_MEM_POOL_SIZE
+	default 24576
+
+endif

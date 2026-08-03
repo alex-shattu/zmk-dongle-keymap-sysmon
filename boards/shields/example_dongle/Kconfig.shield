@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+
+config SHIELD_EXAMPLE_DONGLE
+	def_bool $(shields_list_contains,example_dongle)

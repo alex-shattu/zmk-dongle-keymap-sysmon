@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+
+if SHIELD_EXAMPLE_DONGLE
+
+config ZMK_KEYBOARD_NAME
+	default "Example Dongle"
+
+# A dongle is a split central with no keys of its own.
+config ZMK_SPLIT
+	default y
+
+config ZMK_SPLIT_ROLE_CENTRAL
+	default y
+
+config ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS
+	default 2
+
+# The number of host profiles a central gets is BT_MAX_PAIRED minus the
+# peripherals (see zmk/ble.h), so 7 - 2 leaves the usual five.
+config BT_MAX_PAIRED
+	default 7
+
+endif

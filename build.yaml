@@ -1,0 +1,11 @@
+# CI only: proves the module compiles against the bundled example dongle.
+# Your own repository's build.yaml should pair dongle_tft with your keyboard's
+# dongle shield instead, e.g.
+#
+#   - board: nice_nano//zmk
+#     shield: my_keyboard_dongle dongle_tft
+---
+include:
+  - board: nice_nano//zmk
+    shield: example_dongle dongle_tft
+    artifact-name: example_dongle_tft
