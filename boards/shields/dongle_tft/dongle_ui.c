@@ -11,10 +11,11 @@
  *                 set in the same size as the profile number
  *     y  24..97   keymap of the active layer, 3 rows of 5+5 keys 20x17 on a
  *                 2 px gap with 12 px between the hands, then the 3+3 thumbs
- *                 (20x14) pushed inboard against the centre gap. A bound key
- *                 is #1E242B, an unbound one #0B0D10. Legends show what the
- *                 key would type right now, so they follow shift and caps
- *                 lock as well as the layer
+ *                 (20x14) pushed inboard against the centre gap. Every slot
+ *                 is filled #1E242B whether it is bound or not, so the grid
+ *                 reads as a whole. Legends show what the key would type
+ *                 right now, so they follow shift and caps lock as well as
+ *                 the layer
  *     y 102..117  the five Apple modifier glyphs (inactive #2F363D, active
  *                 white, caps lock amber) and the layer name, right-aligned
  *     y 120       1 px divider #1D2329
@@ -55,9 +56,17 @@
 #define COL_BG 0x000000
 #define COL_DIVIDER 0x1D2329
 
-#define COL_KEY_ON 0x1E242B
-#define COL_KEY_OFF 0x0B0D10
+/*
+ * Every key slot is filled, bound or not. The mock-up sank unbound keys into
+ * the background, but a complete grid is a fixed frame of reference: it makes
+ * the count of empty slots between the edge and the first bound key readable
+ * at a glance. An unbound key is simply a slot with no legend.
+ */
+#define COL_KEY_BG 0x1E242B
 #define COL_KEY_TEXT 0xE8E6E1
+
+/* Unfilled part of a battery gauge. */
+#define COL_BAT_EMPTY 0x0B0D10
 
 #define COL_MOD_OFF 0x2F363D
 #define COL_MOD_ON 0xE8E6E1
@@ -382,8 +391,8 @@ static void key_set_legend(lv_obj_t *key, const char *legend, int32_t height) {
         return;
     }
 
+    /* The slot itself is painted once in make_key(); only the legend moves. */
     if (legend[0] == '\0') {
-        lv_obj_set_style_bg_color(key, lv_color_hex(COL_KEY_OFF), LV_PART_MAIN);
         lv_label_set_text(key, "");
         return;
     }
@@ -391,7 +400,6 @@ static void key_set_legend(lv_obj_t *key, const char *legend, int32_t height) {
     const lv_font_t *font = key_font(legend);
     int32_t pad_top = (height - (int32_t)font->line_height) / 2;
 
-    lv_obj_set_style_bg_color(key, lv_color_hex(COL_KEY_ON), LV_PART_MAIN);
     lv_obj_set_style_text_font(key, font, LV_PART_MAIN);
     lv_obj_set_style_pad_top(key, pad_top > 0 ? pad_top : 0, LV_PART_MAIN);
     lv_label_set_text(key, legend);
@@ -426,7 +434,7 @@ static lv_obj_t *make_key(lv_obj_t *parent, int32_t x, int32_t y, int32_t h) {
     lv_obj_set_style_pad_all(key, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(key, KEY_RADIUS, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(key, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(key, lv_color_hex(COL_KEY_OFF), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(key, lv_color_hex(COL_KEY_BG), LV_PART_MAIN);
     lv_obj_set_style_text_color(key, lv_color_hex(COL_KEY_TEXT), LV_PART_MAIN);
     lv_obj_set_style_text_align(key, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
     return key;
@@ -461,7 +469,7 @@ static void create_status_row(lv_obj_t *screen) {
 
     for (int i = 0; i < 2; i++) {
         lv_obj_t *body = make_rect(screen, body_x[i], BAT_BODY_Y, BAT_BODY_W, BAT_BODY_H,
-                                   COL_KEY_OFF);
+                                   COL_BAT_EMPTY);
 
         lv_obj_set_style_border_width(body, 1, LV_PART_MAIN);
         lv_obj_set_style_border_color(body, lv_color_hex(COL_BAT_BORDER), LV_PART_MAIN);
