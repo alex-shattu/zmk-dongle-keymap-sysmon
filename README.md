@@ -147,7 +147,7 @@ manifest:
       import: app/west.yml
     - name: zmk-dongle-keymap-sysmon
       remote: you
-      revision: main
+      revision: master
   self:
     path: config
 ```
