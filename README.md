@@ -10,9 +10,9 @@ how full each half's battery is. It is also plugged into the computer, so it
 can be told anything the computer knows. This module puts the first on the top
 half of the screen and the second on the bottom.
 
-| Design | On the dongle |
-| :----: | :-----------: |
-| <img src="images/dongle-screen.png" alt="The intended layout: keymap on top, system monitor below" width="380"> | <img src="images/dongle-screen-live.jpg" alt="The same screen running on the hardware" width="380"> |
+| Design | On the dongle | Example of a 6×4 grid |
+| :----: | :-----------: | :-------------------: |
+| <img src="images/dongle-screen.png" alt="The intended layout: keymap on top, system monitor below" width="250"> | <img src="images/dongle-screen-live_5x3.jpg" alt="The same screen running on the hardware" width="250"> | <img src="images/dongle-screen-live_6x4.jpg" alt="The same screen with a 6×4 keymap grid" width="250"> |
 
 Reading it from the top:
 
