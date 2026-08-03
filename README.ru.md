@@ -140,15 +140,15 @@ manifest:
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
-    - name: you
-      url-base: https://github.com/<you>
+    - name: alex-shattu
+      url-base: https://github.com/alex-shattu
   projects:
     - name: zmk
       remote: zmkfirmware
       revision: main
       import: app/west.yml
     - name: zmk-dongle-keymap-sysmon
-      remote: you
+      remote: alex-shattu
       revision: master
   self:
     path: config
