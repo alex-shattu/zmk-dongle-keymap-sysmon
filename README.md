@@ -8,24 +8,19 @@ how full each half's battery is. It is also plugged into the computer, so it
 can be told anything the computer knows. This module puts the first on the top
 half of the screen and the second on the bottom.
 
-```
-┌────────────────────────────────────┐
-│ ⛁ ᛒ 1              ▭ 84%  ▭ 41%    │  connection · profile · both batteries
-│  q  w  e  r  t    y  u  i  o  p    │
-│  a  s  d  f  g    h  j  k  l  ;    │  keymap of the active layer,
-│  z  x  c  v  b    n  m  ,  .  /    │  following shift and caps lock
-│        ↵ ␣ ⌫    ⌦ ␣ ↵              │
-│ ⇧ ⌃ ⌥ ⌘ ⇪                  BASE    │  held modifiers · layer name
-├────────────────────────────────────┤
-│ CPU                          37%   │
-│ ▁▃▂▅▇▄▂▁▃▅▆▇▅▃▂▁▂▄▆▇▅▃▁▂▃▅▇▆▄▂▁▃▅  │  58 samples of history
-│ ────────────────────────────────   │
-│ ████████████░░░░░░░░░░░░░░░░░░░░   │  RAM used (red) over free (green)
-│ 12322MB     228.8GB     ↑234.4KB/s │  used
-│ 10322MB     232.5GB     ↓321.5KB/s │  free
-│ ████████████████░░░░░░░░░░░░░░░░   │  disk
-└────────────────────────────────────┘
-```
+<p align="center">
+  <img src="images/dongle-screen.png" alt="The dongle screen: keymap on top, system monitor below" width="480">
+</p>
+
+Reading it from the top:
+
+| Row | What it shows |
+| --- | ------------- |
+| status | USB and Bluetooth state — carried by the icon **colour**, not by extra text — the BLE profile number, and both halves' battery levels |
+| keymap | the active layer. Legends are what each key would type *right now*, so they follow shift and caps lock |
+| modifiers | the modifiers currently held, plus caps lock in amber, and the layer name |
+| CPU | the current percentage over 58 samples of history |
+| memory / disk / network | used on the red row, free on the green one, between two usage bars in the same two colours |
 
 The keyboard half is event-driven and entirely self-contained: it keeps working
 with nothing running on the host. The monitor half needs a small daemon on the
