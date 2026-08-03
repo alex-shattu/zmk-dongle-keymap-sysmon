@@ -1,6 +1,6 @@
 [English](README.md) · **Русский**
 
-# zmk-dongle-tft
+# zmk-dongle-keymap-sysmon
 
 Модуль ZMK, который превращает донгл сплит-клавиатуры сразу в две вещи: дисплей
 раскладки и системный монитор хоста — на одной SPI-панели 240×240.
@@ -147,7 +147,7 @@ manifest:
       remote: zmkfirmware
       revision: main
       import: app/west.yml
-    - name: zmk-dongle-tft
+    - name: zmk-dongle-keymap-sysmon
       remote: you
       revision: main
   self:
@@ -244,21 +244,21 @@ python3 tools/gen_mdi_font.py     # нужны сеть и node (для lv_font_
 `recursive 'source' of 'Kconfig.zephyr'`. Держите воркспейс вне рабочей копии:
 
 ```sh
-export DONGLE_TFT=/path/to/zmk-dongle-tft
+export KEYMAP_SYSMON=/path/to/zmk-dongle-keymap-sysmon
 
-mkdir -p ~/dongle-tft-west/config
-ln -s "$DONGLE_TFT/config/west.yml" ~/dongle-tft-west/config/west.yml
-git -C ~/dongle-tft-west/config init -q . && git -C ~/dongle-tft-west/config add -A
-git -C ~/dongle-tft-west/config commit -qm "west manifest"
+mkdir -p ~/keymap-sysmon-west/config
+ln -s "$KEYMAP_SYSMON/config/west.yml" ~/keymap-sysmon-west/config/west.yml
+git -C ~/keymap-sysmon-west/config init -q . && git -C ~/keymap-sysmon-west/config add -A
+git -C ~/keymap-sysmon-west/config commit -qm "west manifest"
 
-cd ~/dongle-tft-west
+cd ~/keymap-sysmon-west
 west init -l config && west update && west zephyr-export
 python3.13 -m venv .venv          # Zephyr 4.1 хочет Python 3.10-3.13
 .venv/bin/pip install -r zephyr/scripts/requirements-base.txt
 
 source .venv/bin/activate
 west build -p -d build/example -s zmk/app -b nice_nano//zmk -- \
-  -DZMK_CONFIG="$DONGLE_TFT/config" -DZMK_EXTRA_MODULES="$DONGLE_TFT" \
+  -DZMK_CONFIG="$KEYMAP_SYSMON/config" -DZMK_EXTRA_MODULES="$KEYMAP_SYSMON" \
   -DSHIELD="example_dongle dongle_tft"
 ```
 
@@ -266,7 +266,7 @@ west build -p -d build/example -s zmk/app -b nice_nano//zmk -- \
 своим модулем клавиатуры можно так:
 
 ```sh
--DZMK_EXTRA_MODULES="/path/to/your-keyboard;$DONGLE_TFT"
+-DZMK_EXTRA_MODULES="/path/to/your-keyboard;$KEYMAP_SYSMON"
 ```
 
 Ещё понадобится Zephyr SDK 0.17.x с `arm-zephyr-eabi`.

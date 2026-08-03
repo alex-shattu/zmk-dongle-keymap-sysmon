@@ -1,6 +1,6 @@
 **English** · [Русский](README.ru.md)
 
-# zmk-dongle-tft
+# zmk-dongle-keymap-sysmon
 
 A ZMK module that turns a split-keyboard dongle into two things at once: a
 keymap display and a host system monitor, on one 240×240 SPI panel.
@@ -145,7 +145,7 @@ manifest:
       remote: zmkfirmware
       revision: main
       import: app/west.yml
-    - name: zmk-dongle-tft
+    - name: zmk-dongle-keymap-sysmon
       remote: you
       revision: main
   self:
@@ -242,21 +242,21 @@ If you also make it a west topdir, `west update` clones Zephyr into that same
 Keep the workspace outside the checkout:
 
 ```sh
-export DONGLE_TFT=/path/to/zmk-dongle-tft
+export KEYMAP_SYSMON=/path/to/zmk-dongle-keymap-sysmon
 
-mkdir -p ~/dongle-tft-west/config
-ln -s "$DONGLE_TFT/config/west.yml" ~/dongle-tft-west/config/west.yml
-git -C ~/dongle-tft-west/config init -q . && git -C ~/dongle-tft-west/config add -A
-git -C ~/dongle-tft-west/config commit -qm "west manifest"
+mkdir -p ~/keymap-sysmon-west/config
+ln -s "$KEYMAP_SYSMON/config/west.yml" ~/keymap-sysmon-west/config/west.yml
+git -C ~/keymap-sysmon-west/config init -q . && git -C ~/keymap-sysmon-west/config add -A
+git -C ~/keymap-sysmon-west/config commit -qm "west manifest"
 
-cd ~/dongle-tft-west
+cd ~/keymap-sysmon-west
 west init -l config && west update && west zephyr-export
 python3.13 -m venv .venv          # Zephyr 4.1 wants Python 3.10-3.13
 .venv/bin/pip install -r zephyr/scripts/requirements-base.txt
 
 source .venv/bin/activate
 west build -p -d build/example -s zmk/app -b nice_nano//zmk -- \
-  -DZMK_CONFIG="$DONGLE_TFT/config" -DZMK_EXTRA_MODULES="$DONGLE_TFT" \
+  -DZMK_CONFIG="$KEYMAP_SYSMON/config" -DZMK_EXTRA_MODULES="$KEYMAP_SYSMON" \
   -DSHIELD="example_dongle dongle_tft"
 ```
 
@@ -264,7 +264,7 @@ west build -p -d build/example -s zmk/app -b nice_nano//zmk -- \
 keyboard module too:
 
 ```sh
--DZMK_EXTRA_MODULES="/path/to/your-keyboard;$DONGLE_TFT"
+-DZMK_EXTRA_MODULES="/path/to/your-keyboard;$KEYMAP_SYSMON"
 ```
 
 You will also need the Zephyr SDK 0.17.x with `arm-zephyr-eabi`.
