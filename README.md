@@ -20,7 +20,7 @@ Reading it from the top:
 | --- | ------------- |
 | status | USB and Bluetooth state — carried by the icon **colour**, not by extra text — the BLE profile number, and both halves' battery levels |
 | keymap | the active layer. Legends are what each key would type *right now*, so they follow shift and caps lock |
-| modifiers | the modifiers currently held, plus caps lock in amber, and the layer name |
+| modifiers | the modifiers currently held, caps lock in a colour of its own, and the layer name |
 | CPU | the current percentage over 58 samples of history |
 | memory / disk / network | used on the red row, free on the green one, between two usage bars in the same two colours |
 
