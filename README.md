@@ -9,7 +9,13 @@ can be told anything the computer knows. This module puts the first on the top
 half of the screen and the second on the bottom.
 
 <p align="center">
-  <img src="images/dongle-screen.png" alt="The dongle screen: keymap on top, system monitor below" width="480">
+  <img src="images/dongle-screen-live.jpg" alt="The assembled dongle running, in a printed Snake Dongle case" width="360">
+</p>
+
+<p align="center">
+  <img src="images/dongle-screen.png" alt="The dongle screen: keymap on top, system monitor below" width="420">
+  <br>
+  <sub>The same screen rendered 1:1, without the viewing angle.</sub>
 </p>
 
 Reading it from the top:
