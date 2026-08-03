@@ -28,6 +28,29 @@ The keyboard half is event-driven and entirely self-contained: it keeps working
 with nothing running on the host. The monitor half needs a small daemon on the
 computer (included, macOS and Linux); without it those rows read `--`.
 
+> [!IMPORTANT]
+> **The legends are hand-written, and this repository ships the author's
+> keymap.** ZMK keeps no printable label for a binding at runtime, so what each
+> key says cannot be derived from your `.keymap`. It comes from a C table,
+> [`keymap_legend.c`](boards/shields/dongle_tft/keymap_legend.c), which today
+> holds a six-layer 5×3+3 Charybdis layout.
+>
+> That table is compiled into the module and nothing in your zmk-config can
+> override it, so **plan on forking this repository** rather than pointing
+> `west.yml` at it — an unmodified build puts someone else's legends on your
+> screen. From then on the table is yours to keep in sync by hand; no part of
+> the build watches your keymap for you.
+>
+> Two of the three ways to get it wrong fail the build rather than the panel: a
+> table whose geometry disagrees with `CONFIG_DONGLE_TFT_*`, and a
+> configuration that disagrees with your `zmk,physical-layout`. The third is
+> silent — a layer your keymap has and the table does not is drawn as an empty
+> grid.
+>
+> [Adapting it to your keymap](#adapting-it-to-your-keymap) has the rules. The
+> rest of the screen — status row, modifiers, battery, the whole monitor half —
+> needs none of this and works untouched.
+
 ## Hardware
 
 ### Bill of materials
@@ -131,7 +154,9 @@ unchanged.
 
 ### Add the module to your zmk-config
 
-In your config repository's `config/west.yml`, add this repo as a project:
+In your config repository's `config/west.yml`, add the repo as a project. Point
+it at **your fork**, not at this one — the legend table lives inside the module,
+so customising it means owning the copy west pulls:
 
 ```yaml
 manifest:
@@ -162,9 +187,11 @@ include:
     artifact-name: my_keyboard_dongle_tft
 ```
 
-Push, and download the artifact from the Actions run. That is the whole
-firmware side — the shield brings its own Kconfig defaults (colour depth,
-LVGL buffers, a custom status screen, the second USB serial function).
+Push, and download the artifact from the Actions run. That is all the wiring-up
+there is — the shield brings its own Kconfig defaults (colour depth, LVGL
+buffers, a custom status screen, the second USB serial function). What it does
+*not* bring is your legends: see
+[Adapting it to your keymap](#adapting-it-to-your-keymap).
 
 Requirements on the shield you pair it with: it has to be a **split central**
 (`CONFIG_ZMK_SPLIT_ROLE_CENTRAL=y`) with two peripherals if you want both
@@ -207,7 +234,9 @@ keymap; they live in a table you edit:
 Rules for that table:
 
 - One row of 36 entries per layer, in binding order: three rows of 5+5, then
-  the 3+3 thumbs. Layers in the same order as your keymap node.
+  the 3+3 thumbs. Layers in the same order as your keymap node, and **one row
+  per layer you have** — the layer count is the one thing not checked at build
+  time, so a layer the table is missing is drawn as an empty grid.
 - `NULL` for `&none` — the key is drawn as an empty slot.
 - Spell `&trans` out with the legend it falls through to.
 - Hold-taps get their tap side: `&hml LSHIFT A` is `"a"`.
