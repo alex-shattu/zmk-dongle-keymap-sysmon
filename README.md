@@ -30,15 +30,22 @@ computer (included, macOS); without it those rows read `--`.
 
 ### Bill of materials
 
+The hardware is the [Snake Dongle](https://github.com/joaopedropio/snake-dongle)
+— board, screen and enclosure. Use **its** bill of materials, which is kept up
+to date with working part links; the parts that matter here are:
+
 | Qty | Part | Notes |
 | --- | ---- | ----- |
-| 1 | nRF52840 Pro Micro board | nice!nano v2 or a clone. Other boards need their own pin overlay |
-| 1 | ST7789V 240×240 SPI TFT | 1.3" bare module, or the [Waveshare 1.54" LCD](https://www.waveshare.com/1.54inch-LCD-Module.htm) if you print the matching case variant |
-| 8 | thin wires | silicone-insulated 28–30 AWG is easiest to route |
+| 1 | Pro Micro nRF52840 | a nice!nano v2 works. Other boards need their own pin overlay |
+| 1 | 1.54" TFT 240×240 ST7789 module | the display from the Snake Dongle BOM. The [Waveshare 1.54" LCD](https://www.waveshare.com/1.54inch-LCD-Module.htm) is an alternative, with its own case variant |
+| — | thin wire | 1.27 mm flat ribbon per that BOM; a larger gauge is easier to solder but harder to fit |
 | 1 | printed enclosure | see [Case](#case) |
 
-The panel must be **240×240 and ST7789V**. Other ST7789 sizes will light up but
-the layout is laid out to the pixel for 240×240 and will not fit.
+The panel must be **240×240 and ST7789V**: the layout is placed to the pixel and
+other sizes will not fit.
+
+You do **not** need the Snake Dongle's buzzer or its push buttons — this
+firmware drives neither. Everything else in its BOM applies.
 
 ### Wiring
 
@@ -66,10 +73,11 @@ Notes on that table:
   sits on those exact pins. You therefore cannot combine `dongle_tft` with a
   shield that wants the I2C bus, such as an SSD1306 OLED.
 - The display is driven **write-only** — there is no MISO wire.
-- Many cheap 1.3" modules are 7-pin and have no `CS` broken out (it is tied low
-  on the board). Those work too: leave `D7` unconnected. The bus has a single
-  device, so Zephyr toggling an unconnected chip select is harmless. Only the
-  8-pin wiring above has actually been tested here.
+- Module pin counts vary between sellers, and so does whether `CS` is broken out
+  at all. Wire the display the way the
+  [Snake Dongle wiring diagrams](https://github.com/joaopedropio/snake-dongle#wiring-diagram-)
+  show it (use the "WITH Backlight Control" one — this firmware dims the
+  backlight); the table above is the same pin-out in text form.
 
 ### Case
 
