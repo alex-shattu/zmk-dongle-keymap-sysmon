@@ -1,3 +1,5 @@
+**English** · [Русский](README.ru.md)
+
 # zmk-dongle-tft
 
 A ZMK module that turns a split-keyboard dongle into two things at once: a
