@@ -160,7 +160,7 @@ include:
 HID-интерфейсами. [`host/sysmon-daemon/`](host/sysmon-daemon/) — демон на Python
 для macOS: дважды в секунду снимает CPU, память, диск и сеть и пишет по строке на
 выборку. Установка, launchd-агент и протокол — в
-[его README](host/sysmon-daemon/README.md).
+[его README](host/sysmon-daemon/README.ru.md).
 
 Протокол намеренно примитивный (одна строка текста с разделителем `|`, handshake
 `PING` → `SYSMON1`, чтобы демон нашёл нужный порт), так что демон для другой ОС —

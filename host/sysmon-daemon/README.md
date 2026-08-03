@@ -1,3 +1,5 @@
+**English** · [Русский](README.ru.md)
+
 # sysmon-daemon
 
 A macOS daemon: it samples system metrics (CPU, RAM, network, disk,
