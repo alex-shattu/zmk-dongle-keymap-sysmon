@@ -1,0 +1,25 @@
+# udev rules for the ZMK dongle's sysmon serial port.
+#
+# Two things this fixes:
+#   * ModemManager probes every fresh /dev/ttyACM* with AT commands and holds
+#     it open for several seconds. The daemon then sees EBUSY, or a handshake
+#     that times out on the port that would have answered. ID_MM_DEVICE_IGNORE
+#     tells ModemManager to leave the device alone.
+#   * TAG+="uaccess" hands the port to whoever is logged in at the seat, so
+#     you do not have to join the dialout/uucp group and log out and back in.
+#
+# The IDs below are ZMK's defaults. Confirm yours with the dongle plugged in:
+#   udevadm info -q property -n /dev/ttyACM0 | grep -E 'ID_VENDOR_ID|ID_MODEL_ID'
+#
+# On Arch the serial group is `uucp`, not `dialout` — change GROUP below, or
+# drop it, since uaccess already covers a seated user (udev only warns about
+# an unknown group and applies the rest of the rule).
+#
+# Install:
+#   sudo cp 99-zmk-sysmon.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+# then unplug and replug the dongle.
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="615e", \
+    ENV{ID_MM_DEVICE_IGNORE}="1", ENV{ID_MM_PORT_IGNORE}="1", \
+    MODE="0660", GROUP="dialout", TAG+="uaccess"

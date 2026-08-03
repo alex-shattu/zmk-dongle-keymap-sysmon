@@ -1,0 +1,32 @@
+# systemd *user* unit for the sysmon daemon.
+#
+# Unlike launchd, systemd expands %h to your home directory, so this file
+# needs no editing unless your venv lives somewhere other than
+# ~/.venvs/sysmon or you want extra flags on ExecStart.
+#
+# Install:
+#   mkdir -p ~/.config/systemd/user
+#   cp sysmon-daemon.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now sysmon-daemon
+#
+# See README.md for the rest, including `loginctl enable-linger` if you want
+# it running without a desktop session.
+
+[Unit]
+Description=ZMK dongle sysmon daemon (S3 metrics over CDC-ACM)
+Documentation=https://github.com/alex-shattu/zmk-dongle-keymap-sysmon
+
+[Service]
+Type=simple
+# -u: stdout/stderr go to the journal through a socket, which Python would
+# otherwise block-buffer, leaving `journalctl -f` empty for minutes.
+ExecStart=%h/.venvs/sysmon/bin/python -u -m sysmon_daemon_linux
+Restart=always
+RestartSec=5
+# The daemon spends its life asleep between 500 ms samples; keep it out of
+# the way of anything doing real work.
+Nice=10
+
+[Install]
+WantedBy=default.target

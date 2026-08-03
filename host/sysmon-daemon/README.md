@@ -7,6 +7,9 @@ temperature / thermal state) and pushes them every 500 ms over USB CDC-ACM
 (serial) to a dongle with an ST7789V 240×240 panel. The protocol is plain
 line-based text (`S3|...`).
 
+On Linux, use [`../sysmon-daemon-linux/`](../sysmon-daemon-linux/README.md)
+instead — same wire format, systemd instead of launchd.
+
 ## Flashing the dongle
 
 The firmware is built by GitHub Actions in your own config repository — see the

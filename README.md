@@ -26,7 +26,7 @@ Reading it from the top:
 
 The keyboard half is event-driven and entirely self-contained: it keeps working
 with nothing running on the host. The monitor half needs a small daemon on the
-computer (included, macOS); without it those rows read `--`.
+computer (included, macOS and Linux); without it those rows read `--`.
 
 ## Hardware
 
@@ -180,15 +180,22 @@ properly" warning at that point is normal.
 ## Host daemon
 
 The bottom half is fed over a USB serial port that this firmware exposes
-alongside the HID interfaces. [`host/sysmon-daemon/`](host/sysmon-daemon/) is a
-Python daemon for macOS that samples CPU, memory, disk and network twice a
-second and writes one line per sample. See
-[its README](host/sysmon-daemon/README.md) for installation, the launchd agent
-and the line protocol.
+alongside the HID interfaces. Two Python daemons are included; they sample CPU,
+memory, disk and network twice a second and write one line per sample, in the
+same wire format, so the firmware cannot tell which host it is talking to:
+
+| Daemon | Autostart | Notes |
+| ------ | --------- | ----- |
+| [`host/sysmon-daemon/`](host/sysmon-daemon/) (macOS) | launchd agent | shells out to `pmset`, `route` and `osascript`; no CPU temperature on Apple Silicon |
+| [`host/sysmon-daemon-linux/`](host/sysmon-daemon-linux/) (Linux) | systemd user unit | reads only `/proc` and `/sys` — no subprocesses; needs a udev rule to keep ModemManager off the port |
+
+Each has its own README ([macOS](host/sysmon-daemon/README.md),
+[Linux](host/sysmon-daemon-linux/README.md)) covering installation, the
+autostart unit, what each number is measured from, and the line protocol.
 
 The protocol is deliberately trivial (one `|`-separated line of text, a `PING`
 → `SYSMON1` handshake so the daemon can find the right port), so a daemon for
-another OS is a short script. Nothing else has to change on the firmware side.
+a third OS is a short script. Nothing else has to change on the firmware side.
 
 ## Adapting it to your keymap
 
