@@ -34,7 +34,34 @@
 
 #include "keymap_legend.h"
 
+#include <zephyr/devicetree.h>
+
 #include "mdi_icons.h"
+
+/*
+ * The geometry this table was written for. Changing CONFIG_DONGLE_TFT_*
+ * without rewriting the table would leave the extra keys silently blank, so
+ * say it out loud instead.
+ */
+#define LEGEND_TABLE_COLUMNS 5
+#define LEGEND_TABLE_ROWS 3
+#define LEGEND_TABLE_THUMBS 3
+
+BUILD_ASSERT(LEGEND_TABLE_COLUMNS == CONFIG_DONGLE_TFT_COLUMNS &&
+                 LEGEND_TABLE_ROWS == CONFIG_DONGLE_TFT_ROWS &&
+                 LEGEND_TABLE_THUMBS == CONFIG_DONGLE_TFT_THUMBS,
+             "keymap_legend.c holds a 5x3+3 table. Rewrite it for your keymap and set "
+             "LEGEND_TABLE_* to match CONFIG_DONGLE_TFT_*.");
+
+/*
+ * And the configuration has to describe the keyboard, not just the table: the
+ * chosen physical layout knows how many keys there really are.
+ */
+#if DT_HAS_CHOSEN(zmk_physical_layout)
+BUILD_ASSERT(DT_PROP_LEN(DT_CHOSEN(zmk_physical_layout), keys) == KEYMAP_LEGEND_KEYS,
+             "CONFIG_DONGLE_TFT_COLUMNS/ROWS/THUMBS do not add up to the number of keys in "
+             "the chosen zmk,physical-layout.");
+#endif
 
 #define K_ENTER MDI_KEYBOARD_RETURN
 #define K_BSPC MDI_BACKSPACE_OUTLINE

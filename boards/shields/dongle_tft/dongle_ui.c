@@ -75,36 +75,63 @@
 #define BAT1_BODY_X 183
 #define BAT1_LABEL_X 208
 
-/* keymap */
-#define KEY_W 20
-#define KEY_H 17
-#define THUMB_H 14
+/*
+ * keymap. Only these three come from the configuration; the rest of the
+ * screen is derived, so a 6x4+5 split lays itself out without new constants.
+ */
+#define COLUMNS CONFIG_DONGLE_TFT_COLUMNS
+#define ROWS CONFIG_DONGLE_TFT_ROWS
+#define THUMBS CONFIG_DONGLE_TFT_THUMBS
+
 #define KEY_GAP 2
 #define HAND_GAP 12
-#define GRID_X 6
-#define ROW0_Y 24
-#define ROW_PITCH 20
-#define THUMB_Y 84
+#define ROW_GAP 3
 #define KEY_RADIUS 3
 
-/* modifier + layer row */
-#define MODS_Y 103
-#define MOD_PITCH 16
-#define LAYER_Y 102
+/* Widest key that leaves at least PAD_X either side of the two hands. */
+#define KEY_W ((SCREEN_W - 2 * PAD_X - HAND_GAP - 2 * (COLUMNS - 1) * KEY_GAP) / (2 * COLUMNS))
+#define KEY_PITCH (KEY_W + KEY_GAP)
+#define HAND_W (COLUMNS * KEY_W + (COLUMNS - 1) * KEY_GAP)
+#define GRID_X ((SCREEN_W - (2 * HAND_W + HAND_GAP)) / 2)
 
-/* system monitor */
-#define DIVIDER_Y 120
-#define CPU_VALUE_Y 124
-#define CPU_LABEL_Y 127
-#define CHART_Y 142
-#define CHART_H 44
-#define CHART_W 230
-#define RULE_Y 188
-#define RAM_BAR_Y 194
+/* Four rows only fit if the keys lose a couple of pixels of height. */
+#define KEY_H (ROWS >= 4 ? 15 : 17)
+#define THUMB_H (KEY_H - 3)
+#define ROW_PITCH (KEY_H + ROW_GAP)
+#define ROW0_Y 24
+#define THUMB_Y (ROW0_Y + ROWS * ROW_PITCH)
+#define KEYMAP_BOTTOM (THUMB_Y + THUMB_H)
+
+/* modifier + layer row, then the divider under it */
+#define MODS_Y (KEYMAP_BOTTOM + 5)
+#define LAYER_Y (MODS_Y - 1)
+#define MOD_PITCH 16
+#define DIVIDER_Y (MODS_Y + 17)
+
+/*
+ * System monitor. Everything from the baseline rule down is anchored to the
+ * bottom edge, and the CPU chart takes whatever is left between the divider
+ * and that block — so a taller keymap costs chart height and nothing else.
+ */
 #define BAR_H 3
-#define ROW_USED_Y 200
-#define ROW_FREE_Y 215
-#define DISK_BAR_Y 231
+#define DISK_BAR_Y (240 - 6 - BAR_H)
+#define ROW_FREE_Y (DISK_BAR_Y - 4 - 12)
+#define ROW_USED_Y (ROW_FREE_Y - 15)
+#define RAM_BAR_Y (ROW_USED_Y - 3 - BAR_H)
+#define RULE_Y (RAM_BAR_Y - 6)
+
+#define CPU_VALUE_Y (DIVIDER_Y + 4)
+#define CPU_LABEL_Y (CPU_VALUE_Y + 3)
+#define CHART_Y (CPU_VALUE_Y + 18)
+#define CHART_H (RULE_Y - 2 - CHART_Y)
+#define CHART_W (SCREEN_W - 2 * PAD_X)
+
+/* A configuration that does not leave a readable screen is a build error. */
+BUILD_ASSERT(THUMBS <= COLUMNS, "More thumb keys than columns: the cluster would overhang "
+                                "its own hand.");
+BUILD_ASSERT(KEY_W >= 14, "Keys too narrow for a legend; reduce CONFIG_DONGLE_TFT_COLUMNS.");
+BUILD_ASSERT(CHART_H >= 20, "The keymap leaves too little height for the CPU chart; reduce "
+                            "CONFIG_DONGLE_TFT_ROWS.");
 
 /*
  * The three value columns are left-aligned at fixed offsets instead of being
@@ -289,11 +316,20 @@ static lv_obj_t *make_track_bar(lv_obj_t *parent, int32_t y) {
  * done with a top pad, because a label with a fixed height draws its text at
  * the top.
  */
-static const lv_font_t *key_font(const char *text) {
+/*
+ * One pixel of overhang is allowed: the 3-row thumbs have always been 14 px
+ * with a 15 px line box and read perfectly well, and insisting on a strict fit
+ * would drop them to a smaller font for no reason.
+ */
+static bool font_fits(const lv_font_t *font, int32_t height) {
+    return (int32_t)font->line_height <= height + 1;
+}
+
+static const lv_font_t *key_font(const char *text, int32_t height) {
     /* The icons live in the private use area (U+E000..U+EFFF), whose UTF-8
      * always starts with 0xEE; a text legend is plain ASCII and never can. */
     if ((uint8_t)text[0] == 0xEEu) {
-        return &mdi_font_12;
+        return font_fits(&mdi_font_12, height) ? &mdi_font_12 : &mdi_font_10;
     }
 
     uint8_t code_points = 0;
@@ -304,7 +340,12 @@ static const lv_font_t *key_font(const char *text) {
         }
     }
 
-    return (code_points <= 1) ? &lv_font_montserrat_12 : &lv_font_montserrat_8;
+    if (code_points > 1) {
+        return &lv_font_montserrat_8;
+    }
+
+    return font_fits(&lv_font_montserrat_12, height) ? &lv_font_montserrat_12
+                                                     : &lv_font_montserrat_10;
 }
 
 /*
@@ -368,7 +409,7 @@ static void key_set_legend(lv_obj_t *key, const char *legend, int32_t height) {
         return;
     }
 
-    const lv_font_t *font = key_font(legend);
+    const lv_font_t *font = key_font(legend, height);
     int32_t pad_top = (height - (int32_t)font->line_height) / 2;
 
     lv_obj_set_style_text_font(key, font, LV_PART_MAIN);
@@ -412,7 +453,8 @@ static void keymap_sync(void) {
         const char *legend =
             legend_for_mods(keymap_legend_get(active_layer, i), buf, active_shift, active_caps);
 
-        key_set_legend(keys[i], legend, (i < 30) ? KEY_H : THUMB_H);
+        key_set_legend(keys[i], legend,
+                       (i < KEYMAP_LEGEND_GRID_KEYS) ? KEY_H : THUMB_H);
     }
 }
 
@@ -491,16 +533,16 @@ static void create_status_row(lv_obj_t *screen) {
 }
 
 static void create_keymap(lv_obj_t *screen) {
-    /* Three rows of five keys per hand. */
-    for (int row = 0; row < 3; row++) {
+    for (int row = 0; row < ROWS; row++) {
         int32_t y = ROW0_Y + row * ROW_PITCH;
 
-        for (int col = 0; col < 5; col++) {
-            int32_t left_x = GRID_X + col * (KEY_W + KEY_GAP);
-            int32_t right_x = left_x + 5 * (KEY_W + KEY_GAP) - KEY_GAP + HAND_GAP;
+        for (int col = 0; col < COLUMNS; col++) {
+            int32_t left_x = GRID_X + col * KEY_PITCH;
+            int32_t right_x = left_x + HAND_W + HAND_GAP;
 
-            keys[row * 10 + col] = make_key(screen, left_x, y, KEY_H);
-            keys[row * 10 + 5 + col] = make_key(screen, right_x, y, KEY_H);
+            keys[row * KEYMAP_LEGEND_ROW_KEYS + col] = make_key(screen, left_x, y, KEY_H);
+            keys[row * KEYMAP_LEGEND_ROW_KEYS + COLUMNS + col] =
+                make_key(screen, right_x, y, KEY_H);
         }
     }
 
@@ -509,15 +551,16 @@ static void create_keymap(lv_obj_t *screen) {
      * one starts flush with the left edge of the right hand, so the two
      * groups straddle the centre gap and leave two empty columns at the
      * outer edges. */
-    int32_t left_hand_right = GRID_X + 5 * KEY_W + 4 * KEY_GAP;
+    int32_t left_hand_right = GRID_X + HAND_W;
     int32_t right_hand_left = left_hand_right + HAND_GAP;
 
-    for (int col = 0; col < 3; col++) {
-        int32_t left_x = left_hand_right - (3 - col) * (KEY_W + KEY_GAP) + KEY_GAP;
-        int32_t right_x = right_hand_left + col * (KEY_W + KEY_GAP);
+    for (int col = 0; col < THUMBS; col++) {
+        int32_t left_x = left_hand_right - (THUMBS - col) * KEY_PITCH + KEY_GAP;
+        int32_t right_x = right_hand_left + col * KEY_PITCH;
 
-        keys[30 + col] = make_key(screen, left_x, THUMB_Y, THUMB_H);
-        keys[33 + col] = make_key(screen, right_x, THUMB_Y, THUMB_H);
+        keys[KEYMAP_LEGEND_GRID_KEYS + col] = make_key(screen, left_x, THUMB_Y, THUMB_H);
+        keys[KEYMAP_LEGEND_GRID_KEYS + THUMBS + col] =
+            make_key(screen, right_x, THUMB_Y, THUMB_H);
     }
 }
 

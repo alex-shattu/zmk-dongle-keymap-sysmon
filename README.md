@@ -216,8 +216,35 @@ Rules for that table:
 
 The layer *name* comes from ZMK's `display-name`, so that needs nothing.
 
-What is **not** adjustable without editing `dongle_ui.c`: the grid is 3×(5+5)
-plus 3+3 thumbs. A different key count needs new geometry constants.
+### Grid shape
+
+Three Kconfig values describe your split, and the screen lays itself out from
+them — key size, thumb cluster placement, where the divider falls, and how much
+height is left for the CPU chart:
+
+```
+CONFIG_DONGLE_TFT_COLUMNS=6   # per hand, 4-6
+CONFIG_DONGLE_TFT_ROWS=4      # 3 or 4
+CONFIG_DONGLE_TFT_THUMBS=5    # per hand, 1-5
+```
+
+The default is `5`/`3`/`3` — a 36-key 3x5+3 split. A 6×4+5 works out as 58 keys
+with 16 px columns; the extra two rows come out of the chart, which drops from
+44 px to 34.
+
+Two things are checked while compiling, so a wrong number is a build error
+rather than a scrambled screen:
+
+- the legend table's own `LEGEND_TABLE_*` has to agree with the configuration —
+  otherwise the keys you forgot to add would just be blank;
+- and the configuration has to agree with the **chosen `zmk,physical-layout`**,
+  which is where the real key count lives.
+
+What is *not* derived is the arrangement: a grid of two hands plus one thumb
+cluster each, thumbs pushed inboard. Anything genuinely different — a numpad
+column, a fifth row, staggered thumbs — needs geometry work in `dongle_ui.c`.
+There is no reading it out of the physical layout either: on a Charybdis all
+three left thumbs sit at the same coordinates and differ only by rotation.
 
 ## Icons
 

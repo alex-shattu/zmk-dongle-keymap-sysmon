@@ -2,6 +2,30 @@
 
 if SHIELD_DONGLE_TFT
 
+#
+# Shape of the keymap grid. Everything else about it is derived from these
+# three numbers: key size, where the thumb clusters sit, where the divider
+# lands, and how much height is left over for the CPU chart.
+#
+# They have to describe the keyboard you pair the shield with. They are
+# cross-checked against the chosen zmk,physical-layout at build time, so a
+# mismatch is a compile error rather than a scrambled screen.
+#
+config DONGLE_TFT_COLUMNS
+	int "Key columns per hand"
+	range 4 6
+	default 5
+
+config DONGLE_TFT_ROWS
+	int "Key rows"
+	range 3 4
+	default 3
+
+config DONGLE_TFT_THUMBS
+	int "Thumb keys per hand"
+	range 1 5
+	default 3
+
 choice ZMK_DISPLAY_STATUS_SCREEN
 	default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
 endchoice
