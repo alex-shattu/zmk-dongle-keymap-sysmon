@@ -9,6 +9,7 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM AND CONFIG_SHI
 
     zephyr_library_sources(
         custom_status_screen.c
+        dongle_theme.c
         dongle_ui.c
         keymap_legend.c
         mdi_font_10.c

@@ -16,6 +16,7 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 /*
@@ -39,6 +40,24 @@
          * than gpio-leds only to leave led_set_brightness() available.
          */
         zmk,display-led = &pwm_led_0;
+    };
+
+    /*
+     * The Snake Dongle's action button, which its own firmware uses for menus
+     * and themes. Here a short press cycles the colour theme. It is optional:
+     * delete this node in your own overlay and dongle_theme.c drops the
+     * callback, leaving the theme fixed at whatever was last saved.
+     *
+     * Zephyr's input subsystem rather than ZMK's kscan-sideband behaviours —
+     * this is not a key and never produces a keycode.
+     */
+    buttons {
+        compatible = "gpio-keys";
+
+        dongle_tft_theme_button: button_0 {
+            gpios = <&gpio0 31 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            zephyr,code = <INPUT_KEY_0>;
+        };
     };
 
     lcd_backlight: lcd_backlight {

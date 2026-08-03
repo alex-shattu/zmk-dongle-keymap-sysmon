@@ -64,6 +64,7 @@ declares — if you re-pin anything, change both.
 | Data / command | `DC` | P0.24 | `D5` |
 | Reset | `RES` / `RST` | P0.22 | `D4` |
 | Backlight | `BLK` / `BL` | P1.04 | `D8` |
+| Theme button | — | P0.31 | `D21`/`A3` |
 
 Notes on that table:
 
@@ -87,6 +88,24 @@ Notes on that table:
   diagrams works — the "WITH Backlight Control" one matches this table, and the
   other ties `BL` to `VCC`, which as noted above makes no practical difference
   here.
+
+### Themes
+
+A short press on the Snake Dongle's action button cycles four palettes:
+
+| Theme | |
+| ----- | --- |
+| `dark` | the palette the screen was designed in |
+| `light` | the same hues darkened, on a near-white background |
+| `amber` | amber on black; used and free stay red and lime, so the monitor keeps its polarity |
+| `night` | `dark` at roughly half luminance. The backlight is not dimmable, so this is how you stop the panel lighting up a dark room |
+
+The choice is saved to flash and survives a reboot and a reflash. Editing a
+palette, or adding one, is a single table in
+[`dongle_theme.c`](boards/shields/dongle_tft/dongle_theme.c).
+
+The button is optional: drop the `dongle_tft_theme_button` node in your own
+overlay and the callback disappears, leaving whichever theme was saved last.
 
 ### Case
 

@@ -16,6 +16,7 @@
 
 #include <lvgl.h>
 
+#include "dongle_theme.h"
 #include "sysmon_state.h"
 
 /* Modifier bits of dongle_ui_set_mods(), in status-row order. */
@@ -36,8 +37,14 @@ struct dongle_ui_output {
     bool ble_open;
 };
 
-/* Build the whole screen. Call once. */
+/* Build the whole screen, in the theme that is active now. Call once. */
 void dongle_ui_create(lv_obj_t *screen);
+
+/*
+ * Repaint every widget in `theme`. Colours that depend on runtime state are
+ * re-derived, so this is safe to call at any time from the display queue.
+ */
+void dongle_ui_apply_theme(const struct dongle_theme *theme);
 
 /* Connection icons and the profile number of the status row. */
 void dongle_ui_set_output(struct dongle_ui_output state);

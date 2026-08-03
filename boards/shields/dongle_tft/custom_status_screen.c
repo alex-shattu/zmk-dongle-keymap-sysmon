@@ -63,8 +63,18 @@ static void flush_cb_swapped(lv_display_t *display, const lv_area_t *area, uint8
     lvgl_flush_cb_16bit(display, area, px_map);
 }
 
+/* Theme index last painted, so the button's atomic bump is noticed here. */
+static int applied_theme = -1;
+
 static void sysmon_timer_cb(lv_timer_t *timer) {
     ARG_UNUSED(timer);
+
+    int theme = dongle_theme_active_index();
+
+    if (theme != applied_theme) {
+        applied_theme = theme;
+        dongle_ui_apply_theme(dongle_theme_get(theme));
+    }
 
     struct sysmon_state st;
 
@@ -83,6 +93,7 @@ lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_t *screen = lv_obj_create(NULL);
 
     dongle_ui_create(screen);
+    applied_theme = dongle_theme_active_index();
     dongle_zmk_status_init();
 
     lv_timer_create(sysmon_timer_cb, SYSMON_POLL_MS, NULL);

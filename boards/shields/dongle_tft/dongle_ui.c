@@ -12,24 +12,26 @@
  *     y  24..97   keymap of the active layer, 3 rows of 5+5 keys 20x17 on a
  *                 2 px gap with 12 px between the hands, then the 3+3 thumbs
  *                 (20x14) pushed inboard against the centre gap. Every slot
- *                 is filled #1E242B whether it is bound or not, so the grid
- *                 reads as a whole. Legends show what the key would type
- *                 right now, so they follow shift and caps lock as well as
- *                 the layer
- *     y 102..117  the five Apple modifier glyphs (inactive #2F363D, active
- *                 white, caps lock amber) and the layer name, right-aligned
- *     y 120       1 px divider #1D2329
+ *                 is filled whether it is bound or not, so the grid reads as
+ *                 a whole. Legends show what the key would type right now, so
+ *                 they follow shift and caps lock as well as the layer
+ *     y 102..117  the five Apple modifier glyphs (dim when not held, caps
+ *                 lock in its own colour) and the layer name, right-aligned
+ *     y 120       1 px divider
  *
  *   BOTTOM — system monitor
  *     y 124..139  "CPU" and the percentage on one baseline
  *     y 142..185  58 bars, 2 px wide on an exact 4 px pitch, over 230 px
  *     y 188       baseline rule
- *     y 194..196  RAM bar (used red on a green free track)
- *     y 200..212  used row, red:   RAM used / disk used / upload
- *     y 215..227  free row, green: RAM free / disk free / download
+ *     y 194..196  RAM bar (used over the free colour as its track)
+ *     y 200..212  used row: RAM used / disk used / upload
+ *     y 215..227  free row: RAM free / disk free / download
  *                 (three fixed left-aligned columns, so the up and down
  *                  arrows stay in one place as the rates change width)
  *     y 231..233  disk bar, same shape as the RAM one
+ *
+ * Colours all come from the active theme (dongle_theme.h); nothing here
+ * hard-codes one.
  *
  * All numbers are formatted with integer math: values arrive as x10 integers
  * and newlib-nano printf may lack %f.
@@ -38,6 +40,7 @@
  */
 
 #include "dongle_ui.h"
+#include "dongle_theme.h"
 #include "keymap_legend.h"
 #include "mdi_icons.h"
 
@@ -45,55 +48,6 @@
 #include <string.h>
 
 #include <zephyr/sys/util.h>
-
-/* --- palette (mock-up) ---------------------------------------------------- */
-
-/*
- * Both halves are pure black rather than the two near-blacks of the mock-up.
- * The panel is a backlit IPS, so black is the one colour it renders without
- * any wash, and the 1 px divider is what keeps the two halves apart.
- */
-#define COL_BG 0x000000
-#define COL_DIVIDER 0x1D2329
-
-/*
- * Every key slot is filled, bound or not. The mock-up sank unbound keys into
- * the background, but a complete grid is a fixed frame of reference: it makes
- * the count of empty slots between the edge and the first bound key readable
- * at a glance. An unbound key is simply a slot with no legend.
- */
-#define COL_KEY_BG 0x1E242B
-#define COL_KEY_TEXT 0xE8E6E1
-
-/* Unfilled part of a battery gauge. */
-#define COL_BAT_EMPTY 0x0B0D10
-
-#define COL_MOD_OFF 0x2F363D
-#define COL_MOD_ON 0xE8E6E1
-#define COL_CAPS_ON 0xF2B45C
-#define COL_LAYER 0x7FD1C1
-
-#define COL_USB_OFF 0x3A4149
-#define COL_USB_ON 0xD8B25A
-#define COL_BT_CONNECTED 0x4C9DFB
-#define COL_BT_OPEN 0xF2B45C
-#define COL_BT_OFF 0x333B43
-
-#define COL_PROFILE_CONNECTED 0x3DDC97
-#define COL_PROFILE_OPEN 0xF2B45C
-#define COL_PROFILE_NONE 0x3A4149
-
-#define COL_BAT_BORDER 0x7A848E
-#define COL_BAT_TEXT 0xC8CFD6
-#define COL_BAT_OK 0x3DDC97
-#define COL_BAT_LOW 0xF2B45C
-#define COL_BAT_CRIT 0xE2574C
-
-#define COL_CPU_LABEL 0x8B959F
-#define COL_ACCENT 0x7FD1C1
-#define COL_RULE 0x2B333B
-#define COL_USED 0xE2574C
-#define COL_FREE 0x3DDC97
 
 /* Battery gauge thresholds, in percent. */
 #define BAT_OK_PCT 50U
@@ -178,6 +132,9 @@
 /* Data arrives at ~2 Hz; push into the chart at most once per second. */
 #define CHART_PUSH_MS 900
 
+/* The theme in force. Every colour below is read through it. */
+static const struct dongle_theme *th;
+
 /* --- widgets -------------------------------------------------------------- */
 
 static lv_obj_t *usb_icon;
@@ -186,11 +143,19 @@ static lv_obj_t *profile_label;
 
 struct battery_gauge {
     lv_obj_t *body;
+    lv_obj_t *tip;
     lv_obj_t *fill;
     lv_obj_t *label;
 };
 
 static struct battery_gauge batteries[2];
+
+/* Last link state applied, so a theme change can re-derive the icon colours. */
+static struct dongle_ui_output last_output;
+
+/* Last level reported per half, so a theme change can recolour the fill.
+ * 0 means nothing has been reported yet. */
+static uint8_t battery_level[2];
 
 static lv_obj_t *keys[KEYMAP_LEGEND_KEYS];
 
@@ -229,6 +194,12 @@ static lv_chart_series_t *cpu_series;
 static lv_obj_t *ram_bar;
 static lv_obj_t *disk_bar;
 
+static lv_obj_t *root;
+static lv_obj_t *divider;
+static lv_obj_t *chart_rule;
+static lv_obj_t *net_up_icon;
+static lv_obj_t *net_down_icon;
+
 static lv_obj_t *used_mem, *used_disk, *used_net;
 static lv_obj_t *free_mem, *free_disk, *free_net;
 
@@ -256,7 +227,7 @@ static int64_t last_push_ms = -1;
 
 /* Plain rectangle: no padding, no border, no scrolling. */
 static lv_obj_t *make_rect(lv_obj_t *parent, int32_t x, int32_t y, int32_t w, int32_t h,
-                           uint32_t color) {
+                           lv_color_t color) {
     lv_obj_t *obj = lv_obj_create(parent);
 
     lv_obj_remove_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
@@ -264,30 +235,30 @@ static lv_obj_t *make_rect(lv_obj_t *parent, int32_t x, int32_t y, int32_t w, in
     lv_obj_set_style_border_width(obj, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(obj, 0, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(obj, lv_color_hex(color), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(obj, color, LV_PART_MAIN);
     lv_obj_set_pos(obj, x, y);
     lv_obj_set_size(obj, w, h);
     return obj;
 }
 
-static lv_obj_t *make_label(lv_obj_t *parent, const lv_font_t *font, uint32_t color,
+static lv_obj_t *make_label(lv_obj_t *parent, const lv_font_t *font, lv_color_t color,
                             const char *text, int32_t x, int32_t y) {
     lv_obj_t *label = lv_label_create(parent);
 
     lv_obj_set_style_text_font(label, font, LV_PART_MAIN);
-    lv_obj_set_style_text_color(label, lv_color_hex(color), LV_PART_MAIN);
+    lv_obj_set_style_text_color(label, color, LV_PART_MAIN);
     lv_label_set_text(label, text);
     lv_obj_set_pos(label, x, y);
     return label;
 }
 
 /* Right-aligned label: its right edge stays put as the text changes. */
-static lv_obj_t *make_label_right(lv_obj_t *parent, const lv_font_t *font, uint32_t color,
+static lv_obj_t *make_label_right(lv_obj_t *parent, const lv_font_t *font, lv_color_t color,
                                   const char *text, int32_t right_pad, int32_t y) {
     lv_obj_t *label = lv_label_create(parent);
 
     lv_obj_set_style_text_font(label, font, LV_PART_MAIN);
-    lv_obj_set_style_text_color(label, lv_color_hex(color), LV_PART_MAIN);
+    lv_obj_set_style_text_color(label, color, LV_PART_MAIN);
     lv_label_set_text(label, text);
     lv_obj_align(label, LV_ALIGN_TOP_RIGHT, -right_pad, y);
     return label;
@@ -307,8 +278,8 @@ static lv_obj_t *make_track_bar(lv_obj_t *parent, int32_t y) {
     /* The track is the free colour and the indicator the used one, so a bar
      * carries the same red-over-green meaning as the two value rows around
      * it: red is what is taken, green what is left. */
-    lv_obj_set_style_bg_color(bar, lv_color_hex(COL_FREE), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(bar, lv_color_hex(COL_USED), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(bar, th->free, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(bar, th->used, LV_PART_INDICATOR);
     return bar;
 }
 
@@ -405,6 +376,26 @@ static void key_set_legend(lv_obj_t *key, const char *legend, int32_t height) {
     lv_label_set_text(key, legend);
 }
 
+static lv_color_t battery_fill_colour(uint8_t level) {
+    if (level >= BAT_OK_PCT) {
+        return th->bat_ok;
+    }
+    if (level >= BAT_LOW_PCT) {
+        return th->bat_low;
+    }
+    return th->bat_crit;
+}
+
+static void paint_mod_slot(int slot, uint8_t mods) {
+    lv_color_t color = th->mod_off;
+
+    if (mods & mod_slot_bit[slot]) {
+        color = (slot == MOD_SLOT_CAPS) ? th->caps_on : th->mod_on;
+    }
+
+    lv_obj_set_style_text_color(mod_icons[slot], color, LV_PART_MAIN);
+}
+
 /* Redraw the grid if the layer or the modifiers that change legends moved. */
 static void keymap_sync(void) {
     if ((int)active_layer == drawn_layer && active_shift == drawn_shift &&
@@ -434,8 +425,8 @@ static lv_obj_t *make_key(lv_obj_t *parent, int32_t x, int32_t y, int32_t h) {
     lv_obj_set_style_pad_all(key, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(key, KEY_RADIUS, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(key, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(key, lv_color_hex(COL_KEY_BG), LV_PART_MAIN);
-    lv_obj_set_style_text_color(key, lv_color_hex(COL_KEY_TEXT), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(key, th->key_bg, LV_PART_MAIN);
+    lv_obj_set_style_text_color(key, th->key_text, LV_PART_MAIN);
     lv_obj_set_style_text_align(key, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
     return key;
 }
@@ -459,38 +450,40 @@ static void fmt_rate(char *buf, size_t size, uint32_t kbps_x10) {
 /* --- construction --------------------------------------------------------- */
 
 static void create_status_row(lv_obj_t *screen) {
-    usb_icon = make_label(screen, &mdi_font_12, COL_USB_OFF, MDI_USB, USB_ICON_X, ICON_Y);
-    bt_icon = make_label(screen, &mdi_font_12, COL_BT_OFF, MDI_BLUETOOTH_OFF, BT_ICON_X, ICON_Y);
+    usb_icon = make_label(screen, &mdi_font_12, th->usb_off, MDI_USB, USB_ICON_X, ICON_Y);
+    bt_icon = make_label(screen, &mdi_font_12, th->bt_off, MDI_BLUETOOTH_OFF, BT_ICON_X, ICON_Y);
     profile_label =
-        make_label(screen, &lv_font_montserrat_12, COL_PROFILE_NONE, "-", PROFILE_X, TEXT_Y);
+        make_label(screen, &lv_font_montserrat_12, th->profile_none, "-", PROFILE_X, TEXT_Y);
 
     static const int32_t body_x[2] = {BAT0_BODY_X, BAT1_BODY_X};
     static const int32_t label_x[2] = {BAT0_LABEL_X, BAT1_LABEL_X};
 
     for (int i = 0; i < 2; i++) {
         lv_obj_t *body = make_rect(screen, body_x[i], BAT_BODY_Y, BAT_BODY_W, BAT_BODY_H,
-                                   COL_BAT_EMPTY);
+                                   th->bat_empty);
 
         lv_obj_set_style_border_width(body, 1, LV_PART_MAIN);
-        lv_obj_set_style_border_color(body, lv_color_hex(COL_BAT_BORDER), LV_PART_MAIN);
+        lv_obj_set_style_border_color(body, th->bat_border, LV_PART_MAIN);
         lv_obj_set_style_radius(body, 1, LV_PART_MAIN);
 
         /* Contact nub on the right, drawn on the screen so it is not clipped
          * by the body's border box. */
-        make_rect(screen, body_x[i] + BAT_BODY_W, BAT_BODY_Y + (BAT_BODY_H - BAT_TIP_H) / 2,
-                  BAT_TIP_W, BAT_TIP_H, COL_BAT_BORDER);
+        lv_obj_t *tip =
+            make_rect(screen, body_x[i] + BAT_BODY_W, BAT_BODY_Y + (BAT_BODY_H - BAT_TIP_H) / 2,
+                      BAT_TIP_W, BAT_TIP_H, th->bat_border);
 
-        lv_obj_t *fill = make_rect(body, 0, 0, 1, BAT_BODY_H - 2, COL_BAT_OK);
+        lv_obj_t *fill = make_rect(body, 0, 0, 1, BAT_BODY_H - 2, th->bat_ok);
 
         lv_obj_t *label = lv_label_create(screen);
 
         lv_obj_set_style_text_font(label, &lv_font_montserrat_12, LV_PART_MAIN);
-        lv_obj_set_style_text_color(label, lv_color_hex(COL_BAT_TEXT), LV_PART_MAIN);
+        lv_obj_set_style_text_color(label, th->bat_text, LV_PART_MAIN);
         lv_obj_set_width(label, BAT_LABEL_W);
         lv_obj_set_pos(label, label_x[i], TEXT_Y);
         lv_label_set_text(label, "--");
 
-        batteries[i] = (struct battery_gauge){.body = body, .fill = fill, .label = label};
+        batteries[i] =
+            (struct battery_gauge){.body = body, .tip = tip, .fill = fill, .label = label};
 
         /* Nothing is known about a half until it reports in. */
         lv_obj_add_flag(fill, LV_OBJ_FLAG_HIDDEN);
@@ -532,25 +525,25 @@ static void create_mod_row(lv_obj_t *screen) {
     /* mdi_font_12 puts its baseline at y+11 and montserrat_12 at y+12, so the
      * glyphs sit one pixel below the layer name to share its baseline. */
     for (int i = 0; i < MOD_SLOT_COUNT; i++) {
-        mod_icons[i] = make_label(screen, &mdi_font_12, COL_MOD_OFF, mod_slot_icon[i],
+        mod_icons[i] = make_label(screen, &mdi_font_12, th->mod_off, mod_slot_icon[i],
                                   PAD_X + i * MOD_PITCH, MODS_Y);
     }
 
-    layer_label = make_label_right(screen, &lv_font_montserrat_12, COL_LAYER, "", PAD_X, LAYER_Y);
+    layer_label = make_label_right(screen, &lv_font_montserrat_12, th->layer, "", PAD_X, LAYER_Y);
 }
 
 static void create_sysmon(lv_obj_t *screen) {
     /* No panel rectangle: the bottom half is the screen background, so the
      * divider is the only thing separating it from the keyboard half. */
-    make_rect(screen, 0, DIVIDER_Y, SCREEN_W, 1, COL_DIVIDER);
+    divider = make_rect(screen, 0, DIVIDER_Y, SCREEN_W, 1, th->divider);
 
     /* montserrat_10 puts its baseline at y+9 (line_height 11, base_line 2)
      * and montserrat_12 at y+12, so the caption drops three pixels to share
      * the percentage's baseline. */
-    cpu_label = make_label(screen, &lv_font_montserrat_10, COL_CPU_LABEL, "CPU", PAD_X,
+    cpu_label = make_label(screen, &lv_font_montserrat_10, th->cpu_label, "CPU", PAD_X,
                            CPU_LABEL_Y);
     lv_obj_set_style_text_letter_space(cpu_label, 1, LV_PART_MAIN);
-    cpu_value = make_label_right(screen, &lv_font_montserrat_12, COL_ACCENT, "--%", PAD_X,
+    cpu_value = make_label_right(screen, &lv_font_montserrat_12, th->accent, "--%", PAD_X,
                                  CPU_VALUE_Y);
 
     cpu_chart = lv_chart_create(screen);
@@ -570,34 +563,41 @@ static void create_sysmon(lv_obj_t *screen) {
     lv_chart_set_update_mode(cpu_chart, LV_CHART_UPDATE_MODE_SHIFT);
     lv_chart_set_div_line_count(cpu_chart, 0, 0);
     lv_chart_set_range(cpu_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 100);
-    cpu_series = lv_chart_add_series(cpu_chart, lv_color_hex(COL_ACCENT), LV_CHART_AXIS_PRIMARY_Y);
+    cpu_series = lv_chart_add_series(cpu_chart, th->accent, LV_CHART_AXIS_PRIMARY_Y);
 
-    make_rect(screen, PAD_X, RULE_Y, CHART_W, 1, COL_RULE);
+    chart_rule = make_rect(screen, PAD_X, RULE_Y, CHART_W, 1, th->rule);
 
     ram_bar = make_track_bar(screen, RAM_BAR_Y);
 
-    used_mem = make_label(screen, &lv_font_montserrat_10, COL_USED, "--", COL_MEM_X, ROW_USED_Y);
-    used_disk = make_label(screen, &lv_font_montserrat_10, COL_USED, "--", COL_DISK_X, ROW_USED_Y);
-    used_net = make_label(screen, &lv_font_montserrat_10, COL_USED, "--", COL_NET_X, ROW_USED_Y);
+    used_mem = make_label(screen, &lv_font_montserrat_10, th->used, "--", COL_MEM_X, ROW_USED_Y);
+    used_disk = make_label(screen, &lv_font_montserrat_10, th->used, "--", COL_DISK_X, ROW_USED_Y);
+    used_net = make_label(screen, &lv_font_montserrat_10, th->used, "--", COL_NET_X, ROW_USED_Y);
 
-    free_mem = make_label(screen, &lv_font_montserrat_10, COL_FREE, "--", COL_MEM_X, ROW_FREE_Y);
-    free_disk = make_label(screen, &lv_font_montserrat_10, COL_FREE, "--", COL_DISK_X, ROW_FREE_Y);
-    free_net = make_label(screen, &lv_font_montserrat_10, COL_FREE, "--", COL_NET_X, ROW_FREE_Y);
+    free_mem = make_label(screen, &lv_font_montserrat_10, th->free, "--", COL_MEM_X, ROW_FREE_Y);
+    free_disk = make_label(screen, &lv_font_montserrat_10, th->free, "--", COL_DISK_X, ROW_FREE_Y);
+    free_net = make_label(screen, &lv_font_montserrat_10, th->free, "--", COL_NET_X, ROW_FREE_Y);
 
     /* mdi_font_10 and montserrat_10 share line_height 11 and base_line 2, so
      * the arrows need no vertical nudge to sit on the value's baseline. */
-    make_label(screen, &mdi_font_10, COL_USED, MDI_ARROW_UP, COL_NET_ICON_X, ROW_USED_Y);
-    make_label(screen, &mdi_font_10, COL_FREE, MDI_ARROW_DOWN, COL_NET_ICON_X, ROW_FREE_Y);
+    net_up_icon =
+        make_label(screen, &mdi_font_10, th->used, MDI_ARROW_UP, COL_NET_ICON_X, ROW_USED_Y);
+    net_down_icon =
+        make_label(screen, &mdi_font_10, th->free, MDI_ARROW_DOWN, COL_NET_ICON_X, ROW_FREE_Y);
 
     disk_bar = make_track_bar(screen, DISK_BAR_Y);
 }
 
 void dongle_ui_create(lv_obj_t *screen) {
+    /* Before anything is built: every widget reads its colours from here, and
+     * the index has already been restored from settings by now. */
+    th = dongle_theme_get(dongle_theme_active_index());
+    root = screen;
+
     lv_obj_remove_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_pad_all(screen, 0, LV_PART_MAIN);
     lv_obj_set_style_border_width(screen, 0, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(screen, lv_color_hex(COL_BG), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(screen, th->bg, LV_PART_MAIN);
 
     create_status_row(screen);
     create_keymap(screen);
@@ -608,38 +608,100 @@ void dongle_ui_create(lv_obj_t *screen) {
     dongle_ui_set_layer(0, NULL);
 }
 
+/*
+ * Repaint everything in `theme`. Colours that depend on runtime state — the
+ * link icons, the battery fills, the modifier glyphs — are re-derived from the
+ * cached state rather than remembered per widget.
+ */
+void dongle_ui_apply_theme(const struct dongle_theme *theme) {
+    th = theme;
+
+    lv_obj_set_style_bg_color(root, th->bg, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(divider, th->divider, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(chart_rule, th->rule, LV_PART_MAIN);
+
+    for (uint8_t i = 0; i < KEYMAP_LEGEND_KEYS; i++) {
+        lv_obj_set_style_bg_color(keys[i], th->key_bg, LV_PART_MAIN);
+        lv_obj_set_style_text_color(keys[i], th->key_text, LV_PART_MAIN);
+    }
+
+    for (int i = 0; i < MOD_SLOT_COUNT; i++) {
+        paint_mod_slot(i, drawn_mods);
+    }
+
+    lv_obj_set_style_text_color(layer_label, th->layer, LV_PART_MAIN);
+
+    for (int i = 0; i < 2; i++) {
+        struct battery_gauge *gauge = &batteries[i];
+
+        lv_obj_set_style_bg_color(gauge->body, th->bat_empty, LV_PART_MAIN);
+        lv_obj_set_style_border_color(gauge->body, th->bat_border, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(gauge->tip, th->bat_border, LV_PART_MAIN);
+        lv_obj_set_style_text_color(gauge->label, th->bat_text, LV_PART_MAIN);
+
+        if (battery_level[i] > 0U) {
+            lv_obj_set_style_bg_color(gauge->fill, battery_fill_colour(battery_level[i]),
+                                      LV_PART_MAIN);
+        }
+    }
+
+    lv_obj_set_style_text_color(cpu_label, th->cpu_label, LV_PART_MAIN);
+    lv_obj_set_style_text_color(cpu_value, th->accent, LV_PART_MAIN);
+    lv_chart_set_series_color(cpu_chart, cpu_series, th->accent);
+
+    lv_obj_t *const bars[] = {ram_bar, disk_bar};
+
+    for (size_t i = 0; i < ARRAY_SIZE(bars); i++) {
+        lv_obj_set_style_bg_color(bars[i], th->free, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(bars[i], th->used, LV_PART_INDICATOR);
+    }
+
+    lv_obj_t *const used_row[] = {used_mem, used_disk, used_net, net_up_icon};
+    lv_obj_t *const free_row[] = {free_mem, free_disk, free_net, net_down_icon};
+
+    for (size_t i = 0; i < ARRAY_SIZE(used_row); i++) {
+        lv_obj_set_style_text_color(used_row[i], th->used, LV_PART_MAIN);
+        lv_obj_set_style_text_color(free_row[i], th->free, LV_PART_MAIN);
+    }
+
+    /* Link state decides which of several colours the icons take. */
+    dongle_ui_set_output(last_output);
+}
+
 /* --- updates -------------------------------------------------------------- */
 
 void dongle_ui_set_output(struct dongle_ui_output state) {
+    last_output = state;
+
     if (state.usb_selected) {
-        lv_obj_set_style_text_color(usb_icon, lv_color_hex(COL_USB_ON), LV_PART_MAIN);
+        lv_obj_set_style_text_color(usb_icon, th->usb_on, LV_PART_MAIN);
         lv_label_set_text(bt_icon, MDI_BLUETOOTH_OFF);
-        lv_obj_set_style_text_color(bt_icon, lv_color_hex(COL_BT_OFF), LV_PART_MAIN);
-        lv_obj_set_style_text_color(profile_label, lv_color_hex(COL_PROFILE_NONE), LV_PART_MAIN);
+        lv_obj_set_style_text_color(bt_icon, th->bt_off, LV_PART_MAIN);
+        lv_obj_set_style_text_color(profile_label, th->profile_none, LV_PART_MAIN);
         lv_label_set_text(profile_label, "-");
         return;
     }
 
     const char *bt_glyph = MDI_BLUETOOTH_OFF;
-    uint32_t bt_color = COL_BT_OFF;
-    uint32_t profile_color = COL_PROFILE_NONE;
+    lv_color_t bt_color = th->bt_off;
+    lv_color_t profile_color = th->profile_none;
 
     if (state.ble_connected) {
         bt_glyph = MDI_BLUETOOTH_CONNECT;
-        bt_color = COL_BT_CONNECTED;
-        profile_color = COL_PROFILE_CONNECTED;
+        bt_color = th->bt_connected;
+        profile_color = th->profile_connected;
     } else if (state.ble_open) {
         /* Bonded but disconnected keeps the plain glyph too: either way the
          * profile is looking for its host. */
         bt_glyph = MDI_BLUETOOTH;
-        bt_color = COL_BT_OPEN;
-        profile_color = COL_PROFILE_OPEN;
+        bt_color = th->bt_open;
+        profile_color = th->profile_open;
     }
 
-    lv_obj_set_style_text_color(usb_icon, lv_color_hex(COL_USB_OFF), LV_PART_MAIN);
+    lv_obj_set_style_text_color(usb_icon, th->usb_off, LV_PART_MAIN);
     lv_label_set_text(bt_icon, bt_glyph);
-    lv_obj_set_style_text_color(bt_icon, lv_color_hex(bt_color), LV_PART_MAIN);
-    lv_obj_set_style_text_color(profile_label, lv_color_hex(profile_color), LV_PART_MAIN);
+    lv_obj_set_style_text_color(bt_icon, bt_color, LV_PART_MAIN);
+    lv_obj_set_style_text_color(profile_label, profile_color, LV_PART_MAIN);
     lv_label_set_text_fmt(profile_label, "%u", (unsigned int)state.profile + 1U);
 }
 
@@ -650,6 +712,8 @@ void dongle_ui_set_battery(uint8_t source, uint8_t level) {
 
     struct battery_gauge *gauge = &batteries[source];
 
+    battery_level[source] = level;
+
     /* A half that has never reported reads 0 %; show it as unknown rather
      * than as an empty battery. */
     if (level == 0U) {
@@ -658,20 +722,14 @@ void dongle_ui_set_battery(uint8_t source, uint8_t level) {
         return;
     }
 
-    uint32_t color = COL_BAT_CRIT;
-
-    if (level >= BAT_OK_PCT) {
-        color = COL_BAT_OK;
-    } else if (level >= BAT_LOW_PCT) {
-        color = COL_BAT_LOW;
-    }
+    lv_color_t color = battery_fill_colour(level);
 
     /* 1 px border on both sides leaves 17 px of travel; never fully empty,
      * so a low battery still reads as a sliver rather than as nothing. */
     int32_t width = (int32_t)((17U * level + 99U) / 100U);
 
     lv_obj_set_width(gauge->fill, width > 0 ? width : 1);
-    lv_obj_set_style_bg_color(gauge->fill, lv_color_hex(color), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(gauge->fill, color, LV_PART_MAIN);
     lv_obj_remove_flag(gauge->fill, LV_OBJ_FLAG_HIDDEN);
     lv_label_set_text_fmt(gauge->label, "%u%%", (unsigned int)level);
 }
@@ -712,17 +770,9 @@ void dongle_ui_set_mods(uint8_t mods) {
     drawn_mods = mods;
 
     for (int i = 0; i < MOD_SLOT_COUNT; i++) {
-        if ((changed & mod_slot_bit[i]) == 0U) {
-            continue;
+        if (changed & mod_slot_bit[i]) {
+            paint_mod_slot(i, mods);
         }
-
-        uint32_t color = COL_MOD_OFF;
-
-        if (mods & mod_slot_bit[i]) {
-            color = (i == MOD_SLOT_CAPS) ? COL_CAPS_ON : COL_MOD_ON;
-        }
-
-        lv_obj_set_style_text_color(mod_icons[i], lv_color_hex(color), LV_PART_MAIN);
     }
 }
 
