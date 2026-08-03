@@ -68,8 +68,13 @@ declares — if you re-pin anything, change both.
 Notes on that table:
 
 - The pin choice follows the [Snake Dongle](https://github.com/joaopedropio/snake-dongle),
-  which is why its enclosures fit. Backlight on `D8` is what makes it dimmable
-  rather than hard-wired to `VCC`.
+  which is why its enclosures fit.
+- **The backlight is not dimmed.** ZMK switches `zmk,display-led` fully on at
+  startup and only ever calls `led_off()` when it blanks the display, which this
+  shield disables. So `D8` behaves exactly like `VCC` today — wiring `BL`
+  straight to `VCC` works just as well. The pin is kept on a PWM channel, and
+  exposed as `pwm-leds`, only so that dimming stays a possibility:
+  `led_set_brightness()` would work, but nothing calls it.
 - **`D2`/`D3` are also the Pro Micro I2C pads.** The module disables `i2c0`
   because on nRF52840 that peripheral shares its instance with `SPIM0` *and*
   sits on those exact pins. You therefore cannot combine `dongle_tft` with a
@@ -78,8 +83,10 @@ Notes on that table:
 - Module pin counts vary between sellers, and so does whether `CS` is broken out
   at all. Wire the display the way the
   [Snake Dongle wiring diagrams](https://github.com/joaopedropio/snake-dongle#wiring-diagram-)
-  show it (use the "WITH Backlight Control" one — this firmware dims the
-  backlight); the table above is the same pin-out in text form.
+  show it; the table above is the same pin-out in text form. Either of its two
+  diagrams works — the "WITH Backlight Control" one matches this table, and the
+  other ties `BL` to `VCC`, which as noted above makes no practical difference
+  here.
 
 ### Case
 

@@ -32,7 +32,12 @@
 / {
     chosen {
         zephyr,display = &st7789;
-        /* ZMK drives the backlight through the LED API on blank/unblank. */
+        /*
+         * ZMK switches this on at startup and off again only when it blanks
+         * the display, which dongle_tft.conf disables. Nothing sets a
+         * brightness, so the backlight is simply on; pwm-leds is used rather
+         * than gpio-leds only to leave led_set_brightness() available.
+         */
         zmk,display-led = &pwm_led_0;
     };
 
