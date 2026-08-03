@@ -4,7 +4,7 @@
  * The design splits the panel in two halves of 120 px. Coordinates below are
  * the mock-up's (which is drawn at 2x) divided by two.
  *
- *   TOP — keyboard, background #12161A
+ *   TOP — keyboard
  *     y   3..18   status row: USB and Bluetooth icons (state is carried by
  *                 their colour alone), the one-based profile number, and the
  *                 two split batteries — a 19x10 gauge plus its percentage,
@@ -19,7 +19,7 @@
  *                 white, caps lock amber) and the layer name, right-aligned
  *     y 120       1 px divider #1D2329
  *
- *   BOTTOM — system monitor, background #0E1216
+ *   BOTTOM — system monitor
  *     y 124..139  "CPU" and the percentage on one baseline
  *     y 142..185  58 bars, 2 px wide on an exact 4 px pitch, over 230 px
  *     y 188       baseline rule
@@ -47,8 +47,12 @@
 
 /* --- palette (mock-up) ---------------------------------------------------- */
 
-#define COL_TOP_BG 0x12161A
-#define COL_BOT_BG 0x0E1216
+/*
+ * Both halves are pure black rather than the two near-blacks of the mock-up.
+ * The panel is a backlit IPS, so black is the one colour it renders without
+ * any wash, and the 1 px divider is what keeps the two halves apart.
+ */
+#define COL_BG 0x000000
 #define COL_DIVIDER 0x1D2329
 
 #define COL_KEY_ON 0x1E242B
@@ -127,7 +131,6 @@
 
 /* system monitor */
 #define DIVIDER_Y 120
-#define BOT_Y (DIVIDER_Y + 1)
 #define CPU_VALUE_Y 124
 #define CPU_LABEL_Y 127
 #define CHART_Y 142
@@ -529,8 +532,9 @@ static void create_mod_row(lv_obj_t *screen) {
 }
 
 static void create_sysmon(lv_obj_t *screen) {
+    /* No panel rectangle: the bottom half is the screen background, so the
+     * divider is the only thing separating it from the keyboard half. */
     make_rect(screen, 0, DIVIDER_Y, SCREEN_W, 1, COL_DIVIDER);
-    make_rect(screen, 0, BOT_Y, SCREEN_W, 240 - BOT_Y, COL_BOT_BG);
 
     /* montserrat_10 puts its baseline at y+9 (line_height 11, base_line 2)
      * and montserrat_12 at y+12, so the caption drops three pixels to share
@@ -585,7 +589,7 @@ void dongle_ui_create(lv_obj_t *screen) {
     lv_obj_set_style_pad_all(screen, 0, LV_PART_MAIN);
     lv_obj_set_style_border_width(screen, 0, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(screen, lv_color_hex(COL_TOP_BG), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(screen, lv_color_hex(COL_BG), LV_PART_MAIN);
 
     create_status_row(screen);
     create_keymap(screen);
