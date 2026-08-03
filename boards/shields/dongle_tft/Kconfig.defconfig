@@ -63,8 +63,15 @@ config LV_Z_BITS_PER_PIXEL
 config LV_Z_VDB_SIZE
 	default 16
 
-# ~70 widgets, the largest being the 36 keymap keys and the CPU chart.
+# Every LVGL object comes out of this pool, and the keymap is most of them: one
+# label per key, so a 6-column or 4-row grid asks for up to 22 more than the
+# 36-key baseline. Running out is a *runtime* failure and an unhelpful one —
+# lv_malloc() returns NULL, LV_ASSERT_MALLOC() fires, and the display thread
+# stops before it ever draws, leaving the panel showing the previous firmware's
+# last frame. So the pool grows with the grid instead of being tuned for the
+# smallest one; 16 kB of headroom is cheap on a 256 kB part.
 config LV_Z_MEM_POOL_SIZE
+	default 40960 if (DONGLE_TFT_ROWS = 4) || (DONGLE_TFT_COLUMNS = 6) || (DONGLE_TFT_THUMBS > 3)
 	default 24576
 
 endif

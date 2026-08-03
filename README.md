@@ -228,9 +228,31 @@ CONFIG_DONGLE_TFT_ROWS=4      # 3 or 4
 CONFIG_DONGLE_TFT_THUMBS=5    # per hand, 1-5
 ```
 
-The default is `5`/`3`/`3` — a 36-key 3x5+3 split. A 6×4+5 works out as 58 keys
-with 16 px columns; the extra two rows come out of the chart, which drops from
-44 px to 34.
+Columns are 4–6 per hand, rows 3 or 4, thumbs 1–5 per hand, and thumbs may not
+exceed columns. The screen is 240 px wide and 240 tall whatever you pick, so a
+bigger grid buys itself narrower keys and a shorter chart:
+
+| Split | Keys | Key size | Thumb | CPU chart | |
+| ----- | ---: | -------- | ----- | --------: | --- |
+| 4×3+3 | 30 | 25×17 | 25×14 | 44 px | |
+| **5×3+3** | **36** | **20×17** | **20×14** | **44 px** | default; in daily use |
+| 5×3+5 | 40 | 20×17 | 20×14 | 44 px | |
+| 6×3+3 | 42 | 16×17 | 16×14 | 44 px | |
+| 6×3+5 | 46 | 16×17 | 16×14 | 44 px | |
+| 5×4+3 | 46 | 20×15 | 20×12 | 34 px | |
+| 6×4+3 | 54 | 16×15 | 16×12 | 34 px | tried on hardware: small but readable |
+| 6×4+5 | 58 | 16×15 | 16×12 | 34 px | |
+
+A fourth row costs 10 px of chart history, which is where the height comes from —
+everything below the chart is anchored to the bottom edge. Legend fonts are
+picked against the key height, so the shorter keys of a four-row grid drop to a
+smaller font by themselves.
+
+Only `5×3+3` has real mileage on it; `6×4+3` has been flashed once and read
+fine. The rest follow from the same arithmetic but have not been looked at.
+
+The LVGL object pool grows with the grid — one label per key, and running out
+of pool is a silent hang rather than an error — so nothing else needs tuning.
 
 Two things are checked while compiling, so a wrong number is a build error
 rather than a scrambled screen:
