@@ -103,10 +103,14 @@ static const char *const legends[][KEYMAP_LEGEND_KEYS] = {
         "z", "x", "c", "v", "b",  "n", "m", ",", ".", "/",
         THUMBS_BASE_L, THUMBS_BASE_R,
     },
-    /* Num */
+    /*
+     * Num. Structurally Sym, with digits on the top row instead of their
+     * shifted forms — so holding shift here turns 1234567890 into !@#$%^&*()
+     * on the screen as well as on the wire.
+     */
     {
-        "!",  "@",  "#",  "$",  "%",   "^",  "&",  "*",  "(",  ")",
         "1",  "2",  "3",  "4",  "5",   "6",  "7",  "8",  "9",  "0",
+        "`",  "\\", "-",  "=",  NULL,  NULL, "[",  "]",  "'",  ";",
         NULL, NULL, NULL, NULL, NULL,  NULL, NULL, ",",  ".",  "/",
         K_ENTER, K_SPACE, K_BSPC, THUMBS_BASE_R,
     },
