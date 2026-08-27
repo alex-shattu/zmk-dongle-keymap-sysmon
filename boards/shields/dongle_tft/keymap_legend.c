@@ -26,8 +26,9 @@
  *     no modifier held, so it is written *unshifted* — lowercase letters,
  *     "1" not "!", "," not "<". dongle_ui.c applies shift and caps lock to
  *     those at draw time. Keys that already send a shifted keycode (&kp EXCL
- *     and friends on Num/Sym) are written as the character they produce and
- *     are left alone, which is right: holding shift does not change them.
+ *     and friends, if your keymap has any) are written as the character they
+ *     produce and are left alone, which is right: holding shift does not
+ *     change them.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -91,9 +92,13 @@ BUILD_ASSERT(DT_PROP_LEN(DT_CHOSEN(zmk_physical_layout), keys) == KEYMAP_LEGEND_
 #define K_BRI_DN MDI_BRIGHTNESS_5
 #define K_BRI_UP MDI_BRIGHTNESS_7
 
-/* Base thumbs, repeated wherever a layer leaves them &trans. */
-#define THUMBS_BASE_L K_ENTER, K_SPACE, K_BSPC
-#define THUMBS_BASE_R K_DEL, K_SPACE, K_ENTER
+/*
+ * Base thumbs, repeated wherever a layer leaves them &trans. The outer key of
+ * each cluster is a momentary layer (&mo) and types nothing, so it is labelled
+ * with the layer name; the printing keys sit on the middle and inner ones.
+ */
+#define THUMBS_BASE_L "NAV", K_SHIFT, K_BSPC
+#define THUMBS_BASE_R K_ENTER, K_SPACE, "NUM"
 
 static const char *const legends[][KEYMAP_LEGEND_KEYS] = {
     /* Base */
@@ -104,28 +109,26 @@ static const char *const legends[][KEYMAP_LEGEND_KEYS] = {
         THUMBS_BASE_L, THUMBS_BASE_R,
     },
     /*
-     * Num. Structurally Sym, with digits on the top row instead of their
-     * shifted forms — so holding shift here turns 1234567890 into !@#$%^&*()
-     * on the screen as well as on the wire.
+     * Num — the one number-and-symbol layer: digits on the top row, so holding
+     * shift here turns 1234567890 into !@#$%^&*() on the screen as well as on
+     * the wire, and the punctuation sits on the home row.
      */
     {
         "1",  "2",  "3",  "4",  "5",   "6",  "7",  "8",  "9",  "0",
         "`",  "\\", "-",  "=",  NULL,  NULL, "[",  "]",  "'",  ";",
         NULL, NULL, NULL, NULL, NULL,  NULL, NULL, ",",  ".",  "/",
-        K_ENTER, K_SPACE, K_BSPC, THUMBS_BASE_R,
-    },
-    /* Nav */
-    {
-        "F1",   "F2",    "F3",  "F4",  "F5",   "F6",  "F7",    "F8",    "F9",     "F10",
-        K_TAB,  K_CTRL,  K_OPT, K_CMD, "F11",  "F12", K_HOME,  K_UP,    K_END,    K_PG_UP,
-        K_CAPS, K_ESC,   NULL,  NULL,  NULL,   NULL,  K_LEFT,  K_DOWN,  K_RIGHT,  K_PG_DN,
         THUMBS_BASE_L, THUMBS_BASE_R,
     },
-    /* Sym */
+    /*
+     * Nav. Every key on the home row carries a modifier on its hold side — the
+     * base layer's mods, mirrored on both hands — so what shows here is the tap
+     * side: Tab, caps lock and Esc on the left, the navigation keys on the
+     * right.
+     */
     {
-        "!",  "@",  "#",  "$",  "%",   "^",  "&",  "*",  "(",  ")",
-        "`",  "\\", "-",  "=",  NULL,  NULL, "[",  "]",  "'",  ";",
-        NULL, NULL, NULL, NULL, NULL,  NULL, NULL, ",",  ".",  "/",
+        "F1",  "F2",    "F3",   "F4",  "F5",   "F6",  "F7",    "F8",    "F9",     "F10",
+        K_TAB, K_CAPS,  K_ESC,  K_CMD, "F11",  "F12", K_HOME,  K_UP,    K_END,    K_PG_UP,
+        NULL,  NULL,    NULL,   NULL,  NULL,   K_DEL, K_LEFT,  K_DOWN,  K_RIGHT,  K_PG_DN,
         THUMBS_BASE_L, THUMBS_BASE_R,
     },
     /* Sys */
@@ -133,7 +136,7 @@ static const char *const legends[][KEYMAP_LEGEND_KEYS] = {
         "BLD", NULL, NULL, NULL, "BTC",  "OUT", K_PREV,  K_PLAY,   K_NEXT,   "BLD",
         "B1",  "B2", "B3", "B4", "B5",   NULL,  K_MUTE,  K_VOL_DN, K_VOL_UP, NULL,
         "RST", NULL, NULL, NULL, NULL,   NULL,  NULL,    K_BRI_DN, K_BRI_UP, "RST",
-        K_ENTER, NULL, NULL, NULL, NULL, K_ENTER,
+        "NAV", NULL, NULL, NULL, NULL, "NUM",
     },
     /* Mouse (held by the R+T combo) */
     {
