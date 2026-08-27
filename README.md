@@ -252,6 +252,29 @@ Rules for that table:
 
 The layer *name* comes from ZMK's `display-name`, so that needs nothing.
 
+### Checking the table against your keymap
+
+The layer count is the one thing the build cannot check, and a table that has
+drifted from the keymap shows up only on the screen — usually as a grid of
+legends belonging to the layer next door. `tools/check_legends.py` compares the
+two directly:
+
+```bash
+python3 tools/check_legends.py ../my-zmk-config/config/my.keymap
+```
+
+It reports every position where the two disagree: a missing or extra layer,
+`NULL` against a real binding, a hold-tap labelled with its hold instead of its
+tap, a `&trans` spelled with the wrong fall-through. It also works out which
+thumb cluster is occupied while a layer is held — from the keymap's own
+`&mo`/`&lt` positions, its combos and its conditional layers — and expects
+those keys to be blank, since the thumb holding the layer cannot reach them.
+
+Legends it cannot derive are counted as unverified rather than called wrong
+(`-v` lists them); the tables at the top of the script are where you teach it
+your own conventions. It exits non-zero when something is off, so it works as a
+pre-commit hook.
+
 ### Grid shape
 
 Three Kconfig values describe your split, and the screen lays itself out from
@@ -363,6 +386,7 @@ You will also need the Zephyr SDK 0.17.x with `arm-zephyr-eabi`.
 | `zmk_status.c` | ZMK event listeners → UI setters |
 | `dongle_ui.c` | all of the drawing and the pixel geometry |
 | `keymap_legend.c` | the per-layer legend table |
+| `tools/check_legends.py` | compares that table with a keymap, position by position |
 | `sysmon_uart.c`, `sysmon_state.c` | the serial line protocol; no ZMK dependency, so they also work in a plain Zephyr app |
 
 Two details worth knowing if you go editing:
