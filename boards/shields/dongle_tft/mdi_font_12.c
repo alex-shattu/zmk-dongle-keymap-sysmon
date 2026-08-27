@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 12 px
  * Bpp: 4
- * Opts: --font /var/folders/py/xdjhsqqn0cn9114mvbb617w00000gn/T/tmpxa4o75ak/mdi.ttf --size 12 --bpp 4 --format lvgl --no-compress --lv-include lvgl.h --lv-font-name mdi_font_12 -o /Volumes/T7TOUCH/Workspace/zmk-dongle-tft/boards/shields/dongle_tft/mdi_font_12.c --range 0xf0553=>0xe000 --range 0xf00af=>0xe001 --range 0xf00b1=>0xe002 --range 0xf00b2=>0xe003 --range 0xf0636=>0xe004 --range 0xf0634=>0xe005 --range 0xf0635=>0xe006 --range 0xf0633=>0xe007 --range 0xf0632=>0xe008 --range 0xf005d=>0xe009 --range 0xf0045=>0xe00a --range 0xf004d=>0xe00b --range 0xf0054=>0xe00c --range 0xf0793=>0xe00d --range 0xf0794=>0xe00e --range 0xf013f=>0xe00f --range 0xf013c=>0xe010 --range 0xf0311=>0xe011 --range 0xf0312=>0xe012 --range 0xf12b7=>0xe013 --range 0xf1050=>0xe014 --range 0xf0b5c=>0xe015 --range 0xf0e7f=>0xe016 --range 0xf0581=>0xe017 --range 0xf0580=>0xe018 --range 0xf057e=>0xe019 --range 0xf04ae=>0xe01a --range 0xf040e=>0xe01b --range 0xf00de=>0xe01c --range 0xf00e0=>0xe01d --range 0xf04ad=>0xe01e
+ * Opts: --font /var/folders/py/xdjhsqqn0cn9114mvbb617w00000gn/T/tmpzlmyiw27/mdi.ttf --size 12 --bpp 4 --format lvgl --no-compress --lv-include lvgl.h --lv-font-name mdi_font_12 -o /Volumes/T7TOUCH/Workspace/zmk-dongle-keymap-sysmon/boards/shields/dongle_tft/mdi_font_12.c --range 0xf0553=>0xe000 --range 0xf00af=>0xe001 --range 0xf00b1=>0xe002 --range 0xf00b2=>0xe003 --range 0xf0636=>0xe004 --range 0xf0634=>0xe005 --range 0xf0635=>0xe006 --range 0xf0633=>0xe007 --range 0xf0632=>0xe008 --range 0xf005d=>0xe009 --range 0xf0045=>0xe00a --range 0xf004d=>0xe00b --range 0xf0054=>0xe00c --range 0xf0793=>0xe00d --range 0xf0794=>0xe00e --range 0xf013f=>0xe00f --range 0xf013c=>0xe010 --range 0xf0311=>0xe011 --range 0xf0312=>0xe012 --range 0xf12b7=>0xe013 --range 0xf1050=>0xe014 --range 0xf0b5c=>0xe015 --range 0xf0e7f=>0xe016 --range 0xf0581=>0xe017 --range 0xf0580=>0xe018 --range 0xf057e=>0xe019 --range 0xf04ae=>0xe01a --range 0xf040e=>0xe01b --range 0xf00de=>0xe01c --range 0xf00e0=>0xe01d --range 0xf04ad=>0xe01e --range 0xf04e1=>0xe01f
  ******************************************************************************/
 
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
@@ -260,7 +260,14 @@ static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
     /* U+E01E "" */
     0x0, 0x0, 0x4, 0xd3, 0x0, 0xf, 0xff, 0x80,
     0xf, 0xff, 0xfc, 0xf, 0xff, 0xe4, 0xf, 0xfa,
-    0x10, 0xf, 0x50, 0x0, 0xb
+    0x10, 0xf, 0x50, 0x0, 0xb,
+
+    /* U+E01F "" */
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+    0x7, 0x40, 0x0, 0x0, 0xbb, 0xbd, 0xf3, 0x0,
+    0x0, 0x44, 0x49, 0xb0, 0x4, 0x70, 0x0, 0x4,
+    0x0, 0x3f, 0xdb, 0xbb, 0x0, 0x0, 0xb, 0xa4,
+    0x44, 0x0, 0x0, 0x0, 0x40, 0x0, 0x0, 0x0
 };
 
 
@@ -300,7 +307,8 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
     {.bitmap_index = 1138, .adv_w = 192, .box_w = 10, .box_h = 7, .ofs_x = 1, .ofs_y = 1},
     {.bitmap_index = 1173, .adv_w = 192, .box_w = 12, .box_h = 12, .ofs_x = 0, .ofs_y = -1},
     {.bitmap_index = 1245, .adv_w = 192, .box_w = 12, .box_h = 12, .ofs_x = 0, .ofs_y = -1},
-    {.bitmap_index = 1317, .adv_w = 192, .box_w = 6, .box_h = 7, .ofs_x = 3, .ofs_y = 1}
+    {.bitmap_index = 1317, .adv_w = 192, .box_w = 6, .box_h = 7, .ofs_x = 3, .ofs_y = 1},
+    {.bitmap_index = 1338, .adv_w = 192, .box_w = 10, .box_h = 8, .ofs_x = 1, .ofs_y = 1}
 };
 
 /*---------------------
@@ -313,7 +321,7 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
 static const lv_font_fmt_txt_cmap_t cmaps[] =
 {
     {
-        .range_start = 57344, .range_length = 31, .glyph_id_start = 1,
+        .range_start = 57344, .range_length = 32, .glyph_id_start = 1,
         .unicode_list = NULL, .glyph_id_ofs_list = NULL, .list_length = 0, .type = LV_FONT_FMT_TXT_CMAP_FORMAT0_TINY
     }
 };

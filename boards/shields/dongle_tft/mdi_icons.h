@@ -45,3 +45,4 @@ LV_FONT_DECLARE(mdi_font_10);
 #define MDI_BRIGHTNESS_5              "\xEE\x80\x9C" /* mdi:brightness-5 */
 #define MDI_BRIGHTNESS_7              "\xEE\x80\x9D" /* mdi:brightness-7 */
 #define MDI_SKIP_NEXT                 "\xEE\x80\x9E" /* mdi:skip-next */
+#define MDI_SWAP_HORIZONTAL           "\xEE\x80\x9F" /* mdi:swap-horizontal */

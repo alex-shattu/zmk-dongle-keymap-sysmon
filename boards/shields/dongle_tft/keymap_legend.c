@@ -16,7 +16,9 @@
  *   - NULL is an unbound key (&none); the UI draws it as an empty slot.
  *   - &trans is spelled out with the legend it falls through to, which on
  *     this keymap is always the Base layer (every layer above Base is
- *     momentary).
+ *     momentary). The exception is a thumb cluster whose own thumb is holding
+ *     the layer on: those keys are bound but unreachable, so they are left
+ *     blank rather than promising something the hand cannot press.
  *   - hold-taps show their tap side: `&hml LSHIFT A` reads "A", `&lt Nav
  *     ENTER` reads as Enter.
  *   - a Material Design Icon is used wherever one fits the key; everything
@@ -91,6 +93,8 @@ BUILD_ASSERT(DT_PROP_LEN(DT_CHOSEN(zmk_physical_layout), keys) == KEYMAP_LEGEND_
 #define K_VOL_UP MDI_VOLUME_HIGH
 #define K_BRI_DN MDI_BRIGHTNESS_5
 #define K_BRI_UP MDI_BRIGHTNESS_7
+#define K_BT_CLR MDI_BLUETOOTH_OFF
+#define K_OUT MDI_SWAP_HORIZONTAL
 
 /*
  * Base thumbs, repeated wherever a layer leaves them &trans. The outer key of
@@ -99,6 +103,13 @@ BUILD_ASSERT(DT_PROP_LEN(DT_CHOSEN(zmk_physical_layout), keys) == KEYMAP_LEGEND_
  */
 #define THUMBS_BASE_L "NAV", K_SHIFT, K_BSPC
 #define THUMBS_BASE_R K_ENTER, K_SPACE, "NUM"
+
+/*
+ * A cluster whose thumb is holding the layer on. The keys are bound — &trans
+ * all the way down to Base — but that thumb cannot reach them, so drawing them
+ * would advertise keys that are not really there. Blank is the honest legend.
+ */
+#define THUMBS_BUSY NULL, NULL, NULL
 
 static const char *const legends[][KEYMAP_LEGEND_KEYS] = {
     /* Base */
@@ -117,7 +128,7 @@ static const char *const legends[][KEYMAP_LEGEND_KEYS] = {
         "1",  "2",  "3",  "4",  "5",   "6",  "7",  "8",  "9",  "0",
         "`",  "\\", "-",  "=",  NULL,  NULL, "[",  "]",  "'",  ";",
         NULL, NULL, NULL, NULL, NULL,  NULL, NULL, ",",  ".",  "/",
-        THUMBS_BASE_L, THUMBS_BASE_R,
+        THUMBS_BASE_L, THUMBS_BUSY,
     },
     /*
      * Nav. Every key on the home row carries a modifier on its hold side — the
@@ -129,14 +140,19 @@ static const char *const legends[][KEYMAP_LEGEND_KEYS] = {
         "F1",  "F2",    "F3",   "F4",  "F5",   "F6",  "F7",    "F8",    "F9",     "F10",
         K_TAB, K_CAPS,  K_ESC,  K_CMD, "F11",  "F12", K_HOME,  K_UP,    K_END,    K_PG_UP,
         NULL,  NULL,    NULL,   NULL,  NULL,   K_DEL, K_LEFT,  K_DOWN,  K_RIGHT,  K_PG_DN,
-        THUMBS_BASE_L, THUMBS_BASE_R,
+        THUMBS_BUSY, THUMBS_BASE_R,
     },
-    /* Sys */
+    /*
+     * Sys, reached by holding both layer keys at once, so both thumbs are busy
+     * and both clusters are blank. Bootloader and reset used to sit in the
+     * corners; they are gone from the keymap — the dongle's own button does
+     * both, and a reset is not something to keep within reach of a stray press.
+     */
     {
-        "BLD", NULL, NULL, NULL, "BTC",  "OUT", K_PREV,  K_PLAY,   K_NEXT,   "BLD",
-        "B1",  "B2", "B3", "B4", "B5",   NULL,  K_MUTE,  K_VOL_DN, K_VOL_UP, NULL,
-        "RST", NULL, NULL, NULL, NULL,   NULL,  NULL,    K_BRI_DN, K_BRI_UP, "RST",
-        "NAV", NULL, NULL, NULL, NULL, "NUM",
+        NULL, NULL, NULL, NULL, K_BT_CLR, K_OUT, K_PREV,  K_PLAY,   K_NEXT,   NULL,
+        "B1", "B2", "B3", "B4", "B5",     NULL,  K_MUTE,  K_VOL_DN, K_VOL_UP, NULL,
+        NULL, NULL, NULL, NULL, NULL,     NULL,  NULL,    K_BRI_DN, K_BRI_UP, NULL,
+        THUMBS_BUSY, THUMBS_BUSY,
     },
     /* Mouse (held by the R+T combo) */
     {

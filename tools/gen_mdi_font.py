@@ -71,6 +71,10 @@ ICONS = [
     "brightness-5",
     "brightness-7",
     "skip-next",
+    # Sys layer. Appended rather than grouped above on purpose: the private
+    # codepoints are assigned by position in this list, so adding at the end
+    # leaves every existing glyph where it was.
+    "swap-horizontal",
 ]
 
 # One font per size: 12 px for the keymap, the status row and the modifiers,
