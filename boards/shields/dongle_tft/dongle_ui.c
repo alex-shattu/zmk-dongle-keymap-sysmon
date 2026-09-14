@@ -69,11 +69,13 @@
 #define BAT_BODY_Y 6
 #define BAT_TIP_W 2
 #define BAT_TIP_H 4
-#define BAT_LABEL_W 27
-#define BAT0_BODY_X 125
-#define BAT0_LABEL_X 150
-#define BAT1_BODY_X 183
-#define BAT1_LABEL_X 208
+/* Wide enough for "100%" (30 px in Montserrat 12); a narrower box wraps the
+ * sign onto a second line, where it is clipped by the status row. */
+#define BAT_LABEL_W 30
+#define BAT0_BODY_X 122
+#define BAT0_LABEL_X 147
+#define BAT1_BODY_X 180
+#define BAT1_LABEL_X 205
 
 /*
  * keymap. Only these three come from the configuration; the rest of the
